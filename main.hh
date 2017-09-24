@@ -11,7 +11,8 @@
 #include <QMainWindow>
 #include <QDateTime>
 #include <QHostInfo>
-
+#include <QVector>
+#include <QTimer>
 
 
 class MultiLineEdit : public QTextEdit
@@ -65,9 +66,11 @@ public:
 	bool bind();
 	int getMyPortMin();
 	int getMyPortMax();
+	int getMyPortVal();
 
 private:
 	int myPortMin, myPortMax;
+	int myPortVal;
 };
 
 
@@ -79,17 +82,19 @@ class MessageSender : public QMainWindow
 public:
 	MessageSender();
 
-	QByteArray getSerialized();
+	QByteArray getSerialized(QVariantMap map);
 	void setupConnections();
 	int getChatCounter();
 	void updateChatCounter();
 	QString getOriginID();
 	QVariantMap getWantMap();
 	void updateStatusMap(QVariantMap map);
+	int getNeighbor(int val);
 
 public slots:
 	void gotReturnPressed();
 	void onReceive();
+	void sendTimeoutStatus();
 
 
 private:
@@ -98,6 +103,8 @@ private:
 	QString originID;
 	int chatCounter;
 	QVariantMap statusMap;
+	QVariantMap msgMap;
+	QTimer *timer;
 };
 
 #endif // PEERSTER_MAIN_HH

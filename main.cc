@@ -70,6 +70,7 @@ bool NetSocket::bind()
 	for (int p = myPortMin; p <= myPortMax; p++) {
 		if (QUdpSocket::bind(p)) {
 			qDebug() << "bound to UDP port " << p;
+			myPortVal = p;
 			return true;
 		}
 	}
@@ -90,6 +91,11 @@ int NetSocket::getMyPortMax() {
 	return myPortMax;
 }
 
+// Return the bound port
+int NetSocket::getMyPortVal() {
+	return myPortVal;
+}
+
 // Constructor for MessageSender class
 MessageSender::MessageSender()
 {
@@ -107,6 +113,9 @@ MessageSender::MessageSender()
 	statusMap.insert("Want", wantMap);
 	chatCounter = 1;
 
+	// Create instance of msgMap
+
+
 
 	// Create a unique ID for this instance of MessageSender
 	qint64 seedVal = QDateTime::currentMSecsSinceEpoch();
@@ -118,12 +127,19 @@ MessageSender::MessageSender()
 	// Get reference to the text editor
 	MultiLineEdit* textline = chat->getTextLine();
 
+	// Create timer to send status every 10 seconds
+	timer = new QTimer(this);
+
 	// Signal->Slot connections
 	connect(textline, SIGNAL(returnPressed()),
 		this, SLOT(gotReturnPressed()));
 
 	connect(socket, SIGNAL(readyRead()),
 		this, SLOT(onReceive()));
+
+	connect(timer, SIGNAL(timeout()), this, SLOT(sendTimeoutStatus()));
+
+	timer->start(10000);
 }
 
 
@@ -176,6 +192,7 @@ void MessageSender::gotReturnPressed()
 	MultiLineEdit *textline = chat->getTextLine();
 	int myPortMin = socket->getMyPortMin();
 	int myPortMax = socket->getMyPortMax();
+	int myPortVal = socket->getMyPortVal();
 
 	// Initially, just echo the string locally.
 	// Insert some networking code here...
@@ -183,12 +200,22 @@ void MessageSender::gotReturnPressed()
 	
 
 	// Serialize the msg written in the text editor
-	QByteArray serializedMsg = getSerialized();
+	QString str = textline->toPlainText() + " FROM: " + getOriginID() + " MSG# " + QString::number(chatCounter);
+	QVariantMap map;
+	map.insert("ChatText", str);
+	map.insert("Origin", originID);
+	map.insert("SeqNo", chatCounter);
+
+	QByteArray serializedMsg = getSerialized(map);
 	qDebug() << "SERIALIZED: " << serializedMsg.toHex() << endl;
 	for (int i = myPortMin; i <= myPortMax; i++) {
-		qDebug() << "SENT: " << textline->toPlainText() << " TO PORT: " << i << endl;
-		socket->writeDatagram(serializedMsg, QHostAddress::LocalHost, i);
+		// if(i != myPortVal) {
+			qDebug() << "SENT: " << textline->toPlainText() << " TO PORT: " << i << endl;
+			socket->writeDatagram(serializedMsg, QHostAddress::LocalHost, i);
+		// }
 	}
+
+
 
 	updateChatCounter();
 
@@ -200,7 +227,6 @@ void MessageSender::gotReturnPressed()
 // Slot method to receive incoming msg from another peerster node
 void MessageSender::onReceive()
 {
-	qDebug() << "Receiving!!" << endl;
 
 	// Initialize byte array to store incoming msg & resize to required length of msg
 	QByteArray *serializedMsg = new QByteArray();
@@ -208,7 +234,7 @@ void MessageSender::onReceive()
 	serializedMsg->resize(incomingSize);
 
 	// Vars to hold port & address of sender's host
-	quint16* port = new quint16();
+	quint16 *port = new quint16();
 	QHostAddress *host = new QHostAddress();
 	QVariantMap receivedMap;
 
@@ -216,31 +242,164 @@ void MessageSender::onReceive()
 	socket->readDatagram(serializedMsg->data(), incomingSize, host, port);
 	QDataStream stream(serializedMsg, QIODevice::ReadOnly);
 	stream >> receivedMap;
-	QString str = receivedMap["ChatText"].toString();
 
-	// Append text to textView widget
-	chat->getTextView()->append(str);
+	qDebug() << "Receiving message from " << *port << endl;
 
-	// Update statusMap
-	updateStatusMap(receivedMap);
+	// Status Message
+	if(receivedMap.contains("Want")) {
+		bool sendStatus = false;
+		QVector<QVariantMap> sendLst;
 
-	qDebug() << "UPDATED! Need Msg # " << statusMap["Want"].toMap()[receivedMap["Origin"].toString()].toString() << " FROM: " <<  receivedMap["Origin"].toString()<< endl;
+		qDebug() << "is STATUS " << endl;
+		//compare statuses
+		QVariantMap senderStatus = receivedMap["Want"].toMap();
+		QVariantMap myStatus = statusMap["Want"].toMap();
+		for(auto k: myStatus.keys()) {
+			QString origin = k;
+			qDebug() << "Comparing msgs from " << origin << endl;
+			// If origin does not exist at sender's node, send everything we have for origin
+			if(!senderStatus.contains(origin)) {
+				qDebug() << "Sender doesnt have " << origin << " so sending it now" << endl;
+				for(int i=1; i < myStatus[origin].toInt(); i++) {
+					QString key = origin + QString::number(i);
+					QVariantMap msgToSend = msgMap[key].toMap();
+					sendLst.push_back(msgToSend);
+					// QByteArray byteArrayToSender = getSerialized(msgToSend);
+					// socket->writeDatagram(byteArrayToSender, QHostAddress::LocalHost, *port);
+				}
+			}
+			else {
+				int numMsgSender = senderStatus[origin].toInt();
+				int numMsgLocal = myStatus[origin].toInt();
+
+				// Send everything from origin the sender doesn't already have
+				if(numMsgSender < numMsgLocal) {
+					qDebug() << "Sender has some msgs but not all from " << origin << endl;
+					for(int i=numMsgSender; i < numMsgLocal; i++) {
+						QString key = origin + QString::number(i);
+						qDebug() << "KEY HERE IS " << key << endl;
+						QVariantMap msgToSend = msgMap[key].toMap();
+						qDebug() << msgToSend << endl;
+						sendLst.push_back(msgToSend);
+						// QByteArray byteArrayToSender = getSerialized(msgToSend);
+						// socket->writeDatagram(byteArrayToSender, QHostAddress::LocalHost, *port);
+					}
+				}
+				// Send a status message to get missing messages from sender
+				else if(numMsgLocal < numMsgSender) {
+					// QByteArray byteArrayToSender= getSerialized(statusMap);
+					// socket->writeDatagram(byteArrayToSender, QHostAddress::LocalHost, *port);
+					sendStatus = true;
+				}
+				else {
+					qDebug() << "Everything same do nothing" << endl;
+				}
+
+			}
+		}
+		for(auto k: senderStatus.keys()) {
+			if(!senderStatus.contains(k)) {
+				sendStatus = true;
+			}
+		}
+		for(int i=0; i<sendLst.size(); i++) {
+			qDebug() << "SENDING! " << sendLst[i] << endl;
+			QByteArray byteArrayToSender = getSerialized(sendLst[i]);
+			socket->writeDatagram(byteArrayToSender, QHostAddress::LocalHost, *port);
+		}
+		if(sendStatus) {
+			QByteArray byteArrayToSender= getSerialized(statusMap);
+			socket->writeDatagram(byteArrayToSender, QHostAddress::LocalHost, *port);
+		}
+	}
+	// Rumor Message
+	else {
+		QString origin = receivedMap["Origin"].toString();
+		qDebug() << "is RUMOR from " << origin << endl;
+		int seqNo = receivedMap["SeqNo"].toInt();
+		QString key = origin + receivedMap["SeqNo"].toString();
+		QString msg = receivedMap["ChatText"].toString();
+		qDebug() << "Key is " << key << endl;
+
+		// If new msg then start mongering with random neighbor & send status
+		if(!msgMap.contains(key)) {
+			qDebug() << "new message: " << key << " " << msg << endl;
+			msgMap.insert(key, receivedMap);
+			qDebug() << msgMap <<endl;
+
+			chat->getTextView()->append(msg);
+
+			// Update Status Map
+			qDebug() << "Updating Status Map" << endl;
+			QVariantMap wantMap = getWantMap();
+			if(!wantMap.contains(origin)) {
+				qDebug() << "inserting " << origin << endl;
+				if(seqNo == 1) {
+					wantMap.insert(origin, 2);
+				}
+				else wantMap.insert(origin, 1);
+			}
+			else {
+				int currentSeqNo = wantMap[origin].toInt();
+				if(seqNo == currentSeqNo) {
+					wantMap[origin] = wantMap[origin].toInt() + 1;
+				}
+			}
+			statusMap["Want"] = wantMap;
+
+			// Start mongering
+			int neighbor = getNeighbor(socket->getMyPortVal());
+			QByteArray byteArrayToSender = getSerialized(receivedMap);
+			socket->writeDatagram(byteArrayToSender, QHostAddress::LocalHost, neighbor);
+
+			// Send status
+			qDebug() << "Sending status to " << *port << endl;
+			byteArrayToSender = getSerialized(statusMap);
+			socket->writeDatagram(byteArrayToSender, QHostAddress::LocalHost, *port);
+		}
+		else {
+			qDebug() << "Already Have this message" << endl;
+		}
+	}
 }
 
 
-// Method to serialize text sent by a peerster node
-QByteArray MessageSender::getSerialized() {
-	QVariantMap map;
-	QByteArray out;
+int MessageSender::getNeighbor(int val) {
+	int min = socket->getMyPortMin();
+	int max = socket->getMyPortMax();
+	qint64 seedVal = QDateTime::currentMSecsSinceEpoch();
+	qsrand(seedVal);
+	int randVal = qrand();
+	if(val == min) {
+		return min+1;
+	}
+	else if(val == max) {
+		return max-1;
+	}
+	else return (randVal%2) ? val-1 : val+1;
+}
 
+void MessageSender::sendTimeoutStatus() {
+	qDebug() << "TIMEOUT!!!" <<endl;
+	int myPortVal = socket->getMyPortVal();
+	int neighbor = getNeighbor(myPortVal);
+	QByteArray byteArrayToSender= getSerialized(statusMap);
+	socket->writeDatagram(byteArrayToSender, QHostAddress::LocalHost, neighbor);
+	timer->start(10000);
+}
+
+// Method to serialize text sent by a peerster node
+QByteArray MessageSender::getSerialized(QVariantMap map) {
+	// QVariantMap map;
+	QByteArray out;
 	// Retrieve msg from text editor
-	MultiLineEdit *textline = chat->getTextLine();
-	QString str = textline->toPlainText() + " FROM: " + getOriginID() + " MSG# " + QString::number(chatCounter); 
+	// MultiLineEdit *textline = chat->getTextLine();
+	// QString str = textline->toPlainText() + " FROM: " + getOriginID() + " MSG# " + QString::number(chatCounter); 
 
 	// Msg being sent. Origin of msg. Sequence # of msg
-	map.insert("ChatText", str);
-	map.insert("Origin", originID);
-	map.insert("SeqNo", chatCounter);
+	// map.insert("ChatText", str);
+	// map.insert("Origin", originID);
+	// map.insert("SeqNo", chatCounter);
 	QDataStream stream(&out, QIODevice::WriteOnly);
 	stream << map;
 	return out;

@@ -13,7 +13,11 @@
 #include <QHostInfo>
 #include <QVector>
 #include <QTimer>
-
+#include <QObject>
+#include <QStringList>
+#include <QCoreApplication>
+#include <QLabel>
+#include <QSet>
 
 class MultiLineEdit : public QTextEdit
 {
@@ -47,10 +51,12 @@ public:
 
 	QTextEdit *getTextView();
 	MultiLineEdit *getTextLine();
+	MultiLineEdit *getAddPeersLine();
 
 private:
 	QTextEdit *textview;
 	MultiLineEdit *textline;
+	MultiLineEdit *addPeersLine;
 };
 
 
@@ -74,6 +80,28 @@ private:
 };
 
 
+
+class Peer
+{
+
+public:
+	Peer();
+	Peer(QHostAddress ipAddress, quint16 port);
+	Peer(QString hostName, QHostAddress ipAddress, quint16 port);
+	QString getHostName();
+	void setHostName(QString name);
+	QHostAddress getAddress();
+	void setAddress(QHostAddress address);
+	quint16 getPort();
+	void setPort(quint16 portNum);
+
+private:
+	QString hostName;
+	QHostAddress ipAddress;
+	quint16 port;
+};
+
+
 // Main window class containing a ChatDialog and NetSocket
 class MessageSender : public QMainWindow
 {
@@ -83,18 +111,21 @@ public:
 	MessageSender();
 
 	QByteArray getSerialized(QVariantMap map);
-	void setupConnections();
 	int getChatCounter();
 	void updateChatCounter();
 	QString getOriginID();
 	QVariantMap getWantMap();
-	void updateStatusMap(QVariantMap map);
+	void updateStatusMap(QString origin, int seqNo);
 	int getNeighbor(int val);
+	Peer getNeighbor();
+	void addPeer(QString input);
 
 public slots:
 	void gotReturnPressed();
 	void onReceive();
 	void sendTimeoutStatus();
+	void peerLookup(QHostInfo host);
+	void addGuiPeer();
 
 
 private:
@@ -105,6 +136,9 @@ private:
 	QVariantMap statusMap;
 	QVariantMap msgMap;
 	QTimer *timer;
+	QVector<Peer> peerLst;
+	QVariantMap portMap;
+	QSet<QString> peerCheck;
 };
 
 #endif // PEERSTER_MAIN_HH

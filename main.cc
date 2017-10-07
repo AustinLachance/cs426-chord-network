@@ -39,13 +39,33 @@ ChatDialog::ChatDialog()
 	// Lay out the widgets to appear in the main window.
 	// For Qt widget and layout concepts see:
 	// http://doc.qt.nokia.com/4.7-snapshot/widgets-and-layouts.html
-	QVBoxLayout *layout = new QVBoxLayout();
-	layout->addWidget(textview);
-	layout->addWidget(editorLabel);
-	layout->addWidget(textline);
-	layout->addWidget(peersLabel);
-	layout->addWidget(addPeersLine);
-	setLayout(layout);
+	// QStringList list;
+	// list << "Hello" << "Yep";
+
+	QLabel *privateMsgLabel = new QLabel(this);
+	privateMsgLabel->setText("Slide into the DMs");
+	privateMsgList = new QListWidget();
+
+	// Text editor for sending messages and adding new friends
+	QVBoxLayout *editingLayout = new QVBoxLayout();
+	editingLayout->addWidget(editorLabel);
+	editingLayout->addWidget(textline);
+	editingLayout->addWidget(peersLabel);
+	editingLayout->addWidget(addPeersLine);
+
+	// List of friends that you can send private messages
+	QVBoxLayout *privateMsgLayout = new QVBoxLayout();
+	privateMsgLayout->addWidget(privateMsgLabel);
+	privateMsgLayout->addWidget(privateMsgList);
+
+	QHBoxLayout *bottomLayout = new QHBoxLayout();
+	bottomLayout->addLayout(editingLayout);
+	bottomLayout->addLayout(privateMsgLayout);
+
+	QVBoxLayout *mainLayout = new QVBoxLayout();
+	mainLayout->addWidget(textview);
+	mainLayout->addLayout(bottomLayout);
+	setLayout(mainLayout);
 }
 
 
@@ -64,6 +84,10 @@ MultiLineEdit *ChatDialog::getTextLine() {
 // Return the add Peers text line of the ChatDialog
 MultiLineEdit *ChatDialog::getAddPeersLine() {
 	return addPeersLine;
+}
+
+QListWidget *ChatDialog::getPrivateMsgList() {
+	return privateMsgList;
 }
 
 
@@ -178,10 +202,16 @@ MessageSender::MessageSender()
 	if (!socket->bind())
 		exit(1);
 
-	// Set chatCounter to 1 and create the statusMap
+	// Private chat window and hop limit
+	privateChat = new PrivateChat("");
+	MultiLineEdit *privateChatEditor = privateChat->getTextLine();
+	hopLimit = 5;
+
+	// Set chatCounter to 1 and create the statusMap and set noForward flag to default false
 	QVariantMap wantMap;
 	statusMap.insert("Want", wantMap);
 	chatCounter = 1;
+	noForward = false;
 
 	// Add local peers
 	int portMin = socket->getMyPortMin();
@@ -205,7 +235,13 @@ MessageSender::MessageSender()
 	QStringList args = QCoreApplication::arguments();
 	if(args.size() > 1) {
 		for(int i=1; i < args.size(); i++) {
-			addPeer(args[i]);
+			if(args[i] == "-noforward") {
+				qDebug() << "NO FORWARD!!!" << endl;
+				noForward = true;
+			}
+			else {
+				addPeer(args[i]);
+			}
 		}
 	}
 
@@ -216,26 +252,52 @@ MessageSender::MessageSender()
 	QString hostName = QHostInfo::localHostName();
 	originID = hostName + idVal;
 
-	// Get reference to the text editor
+	// Get reference to the text editors and private message list
 	MultiLineEdit* textline = chat->getTextLine();
 	MultiLineEdit* addPeersLine = chat->getAddPeersLine();
+	QListWidget *privateMsgList = chat->getPrivateMsgList();
+	addInitialPrivateMsgPeers();
 
 	// Create timer to send status every 10 seconds
 	timer = new QTimer(this);
 
-	// Signal->Slot connections
+	// Create routing timer to send route rumor every minute
+	routeRumorTimer = new QTimer(this);
+
+
+	// ******** Signal->Slot connections ************************************************
+
+	// User presses return after entering chat message
 	connect(textline, SIGNAL(returnPressed()),
 		this, SLOT(gotReturnPressed()));
 
+	// User presses return after enter a "host:port" to add a peer
 	connect(addPeersLine, SIGNAL(returnPressed()),
 		this, SLOT(addGuiPeer()));
 
+	// User double clicks a peer to start a private message
+	connect(privateMsgList, SIGNAL(itemActivated(QListWidgetItem *)), this, SLOT(setupPrivateMessage(QListWidgetItem *)));
+
+	// node receives a message
 	connect(socket, SIGNAL(readyRead()),
 		this, SLOT(onReceive()));
 
+	// Route rumor message timer timeout
+	connect(routeRumorTimer, SIGNAL(timeout()), this, SLOT(sendRouteRumorTimeout()));
+
+	// Rumor Mongering timer timeout
 	connect(timer, SIGNAL(timeout()), this, SLOT(sendTimeoutStatus()));
 
+	// User sends a private message
+	connect(privateChatEditor, SIGNAL(returnPressed()), this, SLOT(sendPrivateMessage()));
+	// ********************************************************************************
+
+
+
 	timer->start(10000);
+
+	// Send route rumor message to peers
+	sendRouteRumorTimeout();
 }
 
 
@@ -278,26 +340,6 @@ void MessageSender::updateStatusMap(QString origin, int seqNo) {
 		}
 	}
 	statusMap["Want"] = wantMap;
-
-
-
-
-	// QVariantMap wantMap = getWantMap();
-	// QString msgOrigin = map["Origin"].toString();
-	// int msgSeqNo = (map["SeqNo"].toString()).toInt();
-	// qDebug() << "Msg Sent: " << map["SeqNo"].toString() << endl;
-	// // If the sending node is not in the map, add it with SeqNo 1 (Msg received was not msg 1) or 2 (Msg received was msg 1)
-	// if(wantMap.find(msgOrigin) == wantMap.end()) {
-	// 	qDebug() << "Adding Node to my Network!" << endl;
-	// 	int msgNeeded = (msgSeqNo == 1) ? 2 : 1;
-	// 	wantMap.insert(msgOrigin, QString::number(msgNeeded));
-	// }
-	// // If in the map already, see if the received msg is the next msg wanted
-	// else if(wantMap[msgOrigin].toString() == map["SeqNo"].toString()) {
-	// 	qDebug() << "Already have this node. Updating msg Number!" << endl;
-	// 	wantMap[msgOrigin] = (wantMap[msgOrigin].toString()).toInt() + 1;
-	// }
-	// qDebug() << "Message I Need is # " << wantMap[msgOrigin].toString() << endl;
 }
 
 
@@ -313,19 +355,12 @@ void MessageSender::gotReturnPressed()
 	
 
 	// Serialize the msg written in the text editor
-	// QString str = textline->toPlainText() + " FROM: " + getOriginID() + " MSG# " + QString::number(chatCounter);
 	QString str = textline->toPlainText();
 	QVariantMap map;
 	map.insert("ChatText", str);
 	map.insert("Origin", originID);
 	map.insert("SeqNo", chatCounter);
-
 	QByteArray serializedMsg = getSerialized(map);
-	qDebug() << "SERIALIZED: " << serializedMsg.toHex() << endl;
-	
-
-	int numPeers = peerLst.size();
-
 
 	// Add our own message to our msgMap & update status map
 	QString key = originID + QString::number(chatCounter);
@@ -333,9 +368,12 @@ void MessageSender::gotReturnPressed()
 	chat->getTextView()->append(str);
 	updateStatusMap(originID, chatCounter);
 
+	int numPeers = peerLst.size();
+	qDebug() << "I HAVE " << QString::number(numPeers) << " PEERS!" << endl;
+
 	for (int i = 0; i < numPeers; i++) {
 			Peer tempPeer = peerLst[i];
-			qDebug() << "SENT: " << textline->toPlainText() << " TO PORT: " << tempPeer.getPort()<< endl;
+			qDebug() << "SENT: " << textline->toPlainText() << "TO ADDRESS: " << tempPeer.getAddress() << " TO PORT: " << tempPeer.getPort()<< endl;
 			socket->writeDatagram(serializedMsg, tempPeer.getAddress(), tempPeer.getPort());
 	}
 	// Send message to all peers
@@ -348,7 +386,6 @@ void MessageSender::gotReturnPressed()
 // Slot method to receive incoming msg from another peerster node
 void MessageSender::onReceive()
 {
-
 	// Initialize byte array to store incoming msg & resize to required length of msg
 	QByteArray *serializedMsg = new QByteArray();
 	int incomingSize = socket->pendingDatagramSize();
@@ -364,12 +401,31 @@ void MessageSender::onReceive()
 	QDataStream stream(serializedMsg, QIODevice::ReadOnly);
 	stream >> receivedMap;
 
-	qDebug() << "Receiving message from " << *senderAddress << " " << senderPort << endl;
+	qDebug() << "Receiving message from " << *senderAddress << " " << *senderPort << endl;
 
 
 	// If receiving message from an unregistered peer, add to our peer list
 	QString peerKey = senderAddress->toString() + ":" + QString::number(*senderPort);
 	if(!peerCheck.contains(peerKey)) {
+		addPeer(peerKey);
+	}
+
+	bool isDirectRoute = true;
+	// If message contains LastIP/LastPort then add node to peer list
+	if(receivedMap.contains("LastIP") && receivedMap.contains("LastPort")) {
+		isDirectRoute = false;
+		qDebug() << "LastIP and LastPort Found. Add new peer!!!" << endl;
+		
+
+		quint32 addressNum = receivedMap.value("LastIP").toUInt();
+		QHostAddress hostAddress = QHostAddress(addressNum);
+		QString finalAddress = hostAddress.toString();
+		QString port = QString::number(receivedMap.value("LastPort").toInt());
+		QString peerKey = finalAddress + ":" + port;
+
+		qDebug() << "LastIP " << finalAddress << endl;
+		qDebug() << "LastPort " << port << endl;
+
 		addPeer(peerKey);
 	}
 
@@ -406,7 +462,11 @@ void MessageSender::onReceive()
 						qDebug() << "KEY HERE IS " << key << endl;
 						QVariantMap msgToSend = msgMap[key].toMap();
 						qDebug() << msgToSend << endl;
-						sendLst.push_back(msgToSend);
+
+						// if noForward flag is set then only send route rumors (messages without chat text)
+						if(!noForward || !msgToSend.contains("ChatText")) {
+							sendLst.push_back(msgToSend);
+						}
 					}
 				}
 				// Send a status message to get missing messages from sender
@@ -440,33 +500,80 @@ void MessageSender::onReceive()
 			socket->writeDatagram(byteArrayToSender, *senderAddress, *senderPort);
 		}
 	}
+	// Private Msg
+	else if(receivedMap.contains("Dest")) {
+
+		// Get info from message
+		QString dest = receivedMap["Dest"].toString();
+		QString origin = receivedMap["Origin"].toString();
+		quint32 hopLimit = receivedMap["HopLimit"].toInt();
+		QString msg = receivedMap["ChatText"].toString();
+
+		// decrement hopLimit
+		hopLimit--;
+
+		// If the private msg was sent here then display it
+		if(dest == originID) {
+			qDebug() << "Received my private message from " << origin << endl;
+			chat->getTextView()->append(msg);
+		}
+		// Forward the message along to the next hop if noForward flag is not set and hops remain
+		else if(routeTable.contains(dest) && hopLimit > 0 && !noForward) {
+			qDebug() << "Private message not for me. Hops Remaining: " << QString::number(hopLimit) << endl;
+			QPair<QHostAddress, quint16> routingInfo = routeTable.value(dest);
+			receivedMap["HopLimit"] = hopLimit;
+			QByteArray byteArrayToSender= getSerialized(receivedMap);
+			socket->writeDatagram(byteArrayToSender, routingInfo.first, routingInfo.second);
+		}
+	}
 	// Rumor Message
 	else {
 		QString origin = receivedMap["Origin"].toString();
 		qDebug() << "is RUMOR from " << origin << endl;
 		int seqNo = receivedMap["SeqNo"].toInt();
 		QString key = origin + receivedMap["SeqNo"].toString();
-		QString msg = receivedMap["ChatText"].toString();
 		qDebug() << "Key is " << key << endl;
+
+
+		// Add LastIP and LastPort Keys
+		quint32 LastIP = senderAddress->toIPv4Address();
+		quint16 LastPort = *senderPort; 
+		receivedMap.insert("LastIP", LastIP);
+		receivedMap.insert("LastPort", LastPort);
 
 		// If new msg then start mongering with random neighbor & send status
 		if(!msgMap.contains(key)) {
-			qDebug() << "new message: " << key << " " << msg << endl;
+			
+			// Add msg to msgMap
 			msgMap.insert(key, receivedMap);
-			qDebug() << msgMap <<endl;
-
-			chat->getTextView()->append(msg);
 
 			// Update Status Map
 			updateStatusMap(origin, seqNo);
 
-			// Start mongering
-			// int neighbor = getNeighbor(socket->getMyPortVal());
-			Peer neighbor = getNeighbor();
-			int tempPort = neighbor.getPort();
-			QHostAddress address = neighbor.getAddress();
-			QByteArray byteArrayToSender = getSerialized(receivedMap);
-			socket->writeDatagram(byteArrayToSender, address, tempPort);
+			// If it is a chat message then display the text
+			if(receivedMap.contains("ChatText")) {
+
+				QString msg = receivedMap["ChatText"].toString();
+				chat->getTextView()->append(msg);
+
+				qDebug() << "new chat message: " << key << " " << msg << endl;
+			}
+			else {
+				qDebug() << "Is a route rumor message " << endl;
+			}
+
+			// Update routing table
+			updateRoutingTable(origin, *senderAddress, *senderPort);
+
+			// Start mongering if noForward flag is NOT set
+			QByteArray byteArrayToSender;
+			if(!noForward) {
+				Peer neighbor = getNeighbor();
+				int tempPort = neighbor.getPort();
+				QHostAddress address = neighbor.getAddress();
+				byteArrayToSender = getSerialized(receivedMap);
+				socket->writeDatagram(byteArrayToSender, address, tempPort);
+			}
 
 			// Send status back to sender
 			qDebug() << "Sending status to " << *senderAddress << *senderPort << endl;
@@ -474,6 +581,10 @@ void MessageSender::onReceive()
 			socket->writeDatagram(byteArrayToSender, *senderAddress, *senderPort);
 		}
 		else {
+			// update routing table is this is a direct route
+			if(isDirectRoute) {
+				updateRoutingTable(origin, *senderAddress, *senderPort);
+			}
 			qDebug() << "Already Have this message" << endl;
 		}
 	}
@@ -528,6 +639,33 @@ void MessageSender::sendTimeoutStatus() {
 	timer->start(10000);
 }
 
+// Slot for when route rumor timer expires
+void MessageSender::sendRouteRumorTimeout() {
+	qDebug() << "Route Timeout" <<endl;
+
+	QVariantMap map;
+	map.insert("Origin", originID);
+	map.insert("SeqNo", chatCounter);
+
+	// Add our own message to our msgMap & update status map
+	QString key = originID + QString::number(chatCounter);
+	msgMap.insert(key, map);
+	updateStatusMap(originID, chatCounter);
+
+	QByteArray serializedMsg = getSerialized(map);
+
+	int numPeers = peerLst.size();
+
+	qDebug() << QString::number(numPeers) <<endl;
+	for (int i = 0; i < numPeers; i++) {
+		Peer tempPeer = peerLst[i];
+		qDebug() << "Sending route rumor to port " << tempPeer.getPort() <<endl;
+		socket->writeDatagram(serializedMsg, tempPeer.getAddress(), tempPeer.getPort());
+	}
+	updateChatCounter();
+	routeRumorTimer->start(60000);
+}
+
 // Method to serialize text sent by a peerster node
 QByteArray MessageSender::getSerialized(QVariantMap map) {
 	QByteArray out;
@@ -575,6 +713,7 @@ void MessageSender::addGuiPeer()
  {
  	MultiLineEdit *addPeersLine = chat->getAddPeersLine();
  	addPeer(addPeersLine->toPlainText());
+ 	addPeersLine->clear();
  }
 
 
@@ -602,6 +741,117 @@ void MessageSender::peerLookup(QHostInfo host) {
 		QString peerKey = hostAddress.toString() + ":" + QString::number(portNum);
 		peerCheck.insert(peerKey);
 	}
+}
+
+
+void MessageSender::updateRoutingTable(QString origin, QHostAddress address, quint16 port) {
+	qDebug() << "Routing Table Insert: << <" << origin << ", <" << address.toString() << ", " << QString::number(port) << ">>" << endl;
+
+	// Create Address, Port pair
+	QPair<QHostAddress, quint16> pair;
+	pair.first = address;
+	pair.second = port;
+
+	// If this is a new node, add it to our private msg list
+	if(!routeTable.contains(origin)) {
+		chat->getPrivateMsgList()->addItem(origin);
+	}
+
+	// add origin, pair to the route table (insert replaces old val if key already exists in table)
+	routeTable.insert(origin, pair);
+}
+
+
+void MessageSender::setupPrivateMessage(QListWidgetItem *listItem) {
+	qDebug() << "PRIVATE MESSAGE TO " << listItem->text() << endl;
+	privateChat->setDest(listItem->text());
+	privateChat->setLabel(listItem->text());
+	privateChat->show();
+	privateChat->activateWindow();
+}
+
+
+QVariantMap MessageSender::createPrivateMessage() {
+	QVariantMap map;
+	QString message = privateChat->getTextLine()->toPlainText();
+	QString dest = privateChat->getDest();
+
+	map.insert("ChatText", message);
+	map.insert("Dest", dest);
+	map.insert("Origin", originID);
+	map.insert("HopLimit", hopLimit);
+
+	return map;
+}
+
+
+void MessageSender::sendPrivateMessage() {
+	QVariantMap map = createPrivateMessage();
+
+	QString dest = privateChat->getDest();
+
+	if(routeTable.contains(dest)) {
+		QPair<QHostAddress, quint16> routingInfo = routeTable.value(dest);
+		QByteArray byteArrayToSender= getSerialized(map);
+		socket->writeDatagram(byteArrayToSender, routingInfo.first, routingInfo.second);
+	}
+
+	// Clear the text line
+	MultiLineEdit *textline = privateChat->getTextLine();
+	textline->clear();
+
+}
+
+
+
+// *************** DELETE THIS ***************
+void MessageSender::addInitialPrivateMsgPeers() {
+	qDebug() << "ADDING INITIAL PM PEERS" <<endl;
+	QHash<QString, QPair<QHostAddress, quint16>>::iterator i;
+	for(i = routeTable.begin(); i != routeTable.end(); i++) {
+		qDebug() << "HERE" << endl;
+		qDebug() << i.key();
+	}
+}
+// *********************************************
+
+
+PrivateChat::PrivateChat(QString dest) {
+	this->dest = dest;
+
+	textline = new MultiLineEdit(this);
+	textline->setFocus();
+	textline->setMaximumHeight(50);
+
+	QString label = "Your private message to " + dest;
+
+	privateMessageLabel = new QLabel();
+	privateMessageLabel->setText(label);
+
+	QVBoxLayout *mainLayout = new QVBoxLayout();
+	mainLayout->addWidget(privateMessageLabel);
+	mainLayout->addWidget(textline);
+	setLayout(mainLayout);
+}
+
+
+MultiLineEdit* PrivateChat::getTextLine() {
+	return textline;
+}
+
+
+QString PrivateChat::getDest() {
+	return dest;
+}
+
+
+void PrivateChat::setDest(QString dest) {
+	this->dest = dest;
+}
+
+
+void PrivateChat::setLabel(QString label) {
+	this->privateMessageLabel->setText("Your private message to " + label);
 }
 
 

@@ -18,6 +18,11 @@
 #include <QCoreApplication>
 #include <QLabel>
 #include <QSet>
+#include <QHash>
+#include <QPair>
+#include <QListView>
+#include <QStringListModel>
+#include <QListWidget>
 
 class MultiLineEdit : public QTextEdit
 {
@@ -52,11 +57,31 @@ public:
 	QTextEdit *getTextView();
 	MultiLineEdit *getTextLine();
 	MultiLineEdit *getAddPeersLine();
+	QListWidget *getPrivateMsgList();
 
 private:
 	QTextEdit *textview;
 	MultiLineEdit *textline;
 	MultiLineEdit *addPeersLine;
+	QListWidget *privateMsgList;
+};
+
+
+class PrivateChat : public QDialog
+{
+	Q_OBJECT
+
+public:
+	PrivateChat(QString dest);
+	MultiLineEdit *getTextLine();
+	QString getDest();
+	void setDest(QString dest);
+	void setLabel(QString label);
+
+private:
+	MultiLineEdit *textline;
+	QString dest;
+	QLabel *privateMessageLabel;
 };
 
 
@@ -119,26 +144,37 @@ public:
 	int getNeighbor(int val);
 	Peer getNeighbor();
 	void addPeer(QString input);
+	void updateRoutingTable(QString origin, QHostAddress address, quint16 port);
+	void addInitialPrivateMsgPeers();
+	QVariantMap createPrivateMessage();
 
 public slots:
 	void gotReturnPressed();
 	void onReceive();
 	void sendTimeoutStatus();
+	void sendRouteRumorTimeout();
 	void peerLookup(QHostInfo host);
 	void addGuiPeer();
+	void setupPrivateMessage(QListWidgetItem *listItem);
+	void sendPrivateMessage();
 
 
 private:
 	ChatDialog *chat;
 	NetSocket *socket;
+	PrivateChat *privateChat;
 	QString originID;
 	int chatCounter;
+	int hopLimit;
+	bool noForward;
 	QVariantMap statusMap;
 	QVariantMap msgMap;
 	QTimer *timer;
+	QTimer *routeRumorTimer;
 	QVector<Peer> peerLst;
 	QVariantMap portMap;
 	QSet<QString> peerCheck;
+	QHash<QString, QPair<QHostAddress, quint16>> routeTable;
 };
 
 #endif // PEERSTER_MAIN_HH

@@ -151,6 +151,8 @@ public:
 	void sendPointToPoint(QVariantMap map);
 	bool createFingerTable();
 	void stabilizePredecessor(QVariantMap map);
+	QByteArray findClosestPredecessor(quint32 newNode);
+	void joinChord(QString input);
 
 
 public slots:

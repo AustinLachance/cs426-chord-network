@@ -1,0 +1,383 @@
+ast-forward
+ main.cc | 309 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ main.hh |  15 +++++
+ 2 files changed, 320 insertions(+), 4 deletions(-)
+-bash-4.4$ make
+g++ -c -pipe -O2 -Wall -W -D_REENTRANT -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB -DQT_SHARED -I/usr/lib64/qt4/mkspecs/linux-g++ -I. -I/usr/include/QtCore -I/usr/include/QtNetwork -I/usr/include/QtGui -I/usr/include -I. -I/usr/include/QtCrypto -I. -o main.o main.cc
+main.cc: In constructor ‘MessageSender::MessageSender()’:
+main.cc:328:10: error: ‘joinChordLine’ was not declared in this scope
+  connect(joinChordLine, SIGNAL(returnPressed()), this, SLOT(joinGuiPeer()));
+          ^~~~~~~~~~~~~
+main.cc:313:17: warning: unused variable ‘fileSearchLine’ [-Wunused-variable]
+  MultiLineEdit* fileSearchLine = chat->getFileSearchLine();
+                 ^~~~~~~~~~~~~~
+main.cc: In member function ‘bool MessageSender::createFingerTable()’:
+main.cc:366:103: error: ‘QHash<K, V>::iterator::operator bool() const [with Key = QByteArray; T = QList<QByteArray>]’ is private within this context
+   << QByteArray::number((nodeID + start * 2) % 32) << QByteArray::number(-1)) << QByteArray::number(-1) << QByteArray::number(-1);
+                                                                                                       ^
+In file included from /usr/include/QtCore/qdebug.h:46:0,
+                 from /usr/include/QtCore/QDebug:1,
+                 from main.cc:6:
+/usr/include/QtCore/qhash.h:391:16: note: declared private here
+         inline operator bool() const { return false; }
+                ^~~~~~~~
+main.cc:366:103: error: ‘QByteArray::operator QNoImplicitBoolCast() const’ is private within this context
+   << QByteArray::number((nodeID + start * 2) % 32) << QByteArray::number(-1)) << QByteArray::number(-1) << QByteArray::number(-1);
+                                                                                                       ^
+In file included from /usr/include/QtCore/qstring.h:46:0,
+                 from /usr/include/QtCore/qobject.h:48,
+                 from /usr/include/QtGui/qlayout.h:45,
+                 from /usr/include/QtGui/qboxlayout.h:45,
+                 from /usr/include/QtGui/QVBoxLayout:1,
+                 from main.cc:4:
+/usr/include/QtCore/qbytearray.h:383:5: note: declared private here
+     operator QNoImplicitBoolCast() const;
+     ^~~~~~~~
+main.cc:366:129: error: ‘QByteArray::operator QNoImplicitBoolCast() const’ is private within this context
+ ray::number((nodeID + start * 2) % 32) << QByteArray::number(-1)) << QByteArray::number(-1) << QByteArray::number(-1);
+                                                                                                                     ^
+In file included from /usr/include/QtCore/qstring.h:46:0,
+                 from /usr/include/QtCore/qobject.h:48,
+                 from /usr/include/QtGui/qlayout.h:45,
+                 from /usr/include/QtGui/qboxlayout.h:45,
+                 from /usr/include/QtGui/QVBoxLayout:1,
+                 from main.cc:4:
+/usr/include/QtCore/qbytearray.h:383:5: note: declared private here
+     operator QNoImplicitBoolCast() const;
+     ^~~~~~~~
+main.cc:366:105: warning: value computed is not used [-Wunused-value]
+   fingerTable->insert(QByteArray::number((nodeID + start) % 32), QList<QByteArray>() << QByteArray::number((nodeID + start) % 32)
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   << QByteArray::number((nodeID + start * 2) % 32) << QByteArray::number(-1)) << QByteArray::number(-1) << QByteArray::number(-1);
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~
+main.cc: In member function ‘void MessageSender::stabilizeNode()’:
+main.cc:381:2: error: ‘VariantMap’ was not declared in this scope
+  VariantMap predRequestMap;
+  ^~~~~~~~~~
+main.cc:381:2: note: suggested alternative: ‘QVariantMap’
+  VariantMap predRequestMap;
+  ^~~~~~~~~~
+  QVariantMap
+main.cc:382:2: error: ‘predRequestMap’ was not declared in this scope
+  predRequestMap.insert("predecessorRequest", -1);
+  ^~~~~~~~~~~~~~
+main.cc:382:2: note: suggested alternative: ‘predecessor’
+  predRequestMap.insert("predecessorRequest", -1);
+  ^~~~~~~~~~~~~~
+  predecessor
+main.cc:383:24: error: ‘getSerialize’ was not declared in this scope
+  socket->writeDatagram(getSerialize(predRequestMap), succInfo.first, succInfo.second);
+                        ^~~~~~~~~~~~
+main.cc:383:24: note: suggested alternative: ‘getSerialized’
+  socket->writeDatagram(getSerialize(predRequestMap), succInfo.first, succInfo.second);
+                        ^~~~~~~~~~~~
+                        getSerialized
+main.cc: In member function ‘void MessageSender::stabilizePredecessor(QVariantMap)’:
+main.cc:393:42: error: ‘class QVariant’ has no member named ‘toHostAddress’
+  tempNodeInfo.first = map["nodeAddress"].toHostAddress();
+                                          ^~~~~~~~~~~~~
+main.cc: In member function ‘void MessageSender::checkPredecessor()’:
+main.cc:409:23: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+  if(predecessor.first != -1) {
+     ~~~~~~~~~~~~~~~~~~^~~~~
+main.cc: In member function ‘void MessageSender::onReceive()’:
+main.cc:502:3: error: ‘sucessor’ was not declared in this scope
+   sucessor.second.first = receivedMap["successorAddress"].toHostAddress();
+   ^~~~~~~~
+main.cc:502:3: note: suggested alternative: ‘successor’
+   sucessor.second.first = receivedMap["successorAddress"].toHostAddress();
+   ^~~~~~~~
+   successor
+main.cc:502:59: error: ‘class QVariant’ has no member named ‘toHostAddress’
+   sucessor.second.first = receivedMap["successorAddress"].toHostAddress();
+                                                           ^~~~~~~~~~~~~
+main.cc:512:65: error: no matching function for call to ‘QMap<QString, QVariant>::insert(const char [17], QHostAddress&)’
+    receivedMap.insert("successorAddress", successor.second.first);
+                                                                 ^
+In file included from /usr/include/QtCore/qdebug.h:48:0,
+                 from /usr/include/QtCore/QDebug:1,
+                 from main.cc:6:
+/usr/include/QtCore/qmap.h:559:51: note: candidate: QMap<Key, T>::iterator QMap<Key, T>::insert(const Key&, const T&) [with Key = QString; T = QVariant]
+ Q_INLINE_TEMPLATE typename QMap<Key, T>::iterator QMap<Key, T>::insert(const Key &akey,
+                                                   ^~~~~~~~~~~~
+/usr/include/QtCore/qmap.h:559:51: note:   no known conversion for argument 2 from ‘QHostAddress’ to ‘const QVariant&’
+main.cc:515:77: error: ‘class QVariant’ has no member named ‘toHostAddress’
+    socket->writeDatagram(newNodeSuccessorMsg, receivedMap["newNodeAddress"].toHostAddress(), receivedMap["newNodePort"].toInt());
+                                                                             ^~~~~~~~~~~~~
+main.cc:523:35: error: ‘findClosestPredecessor’ was not declared in this scope
+   QByteArray closestPredecessor = findClosestPredecessor(receivedMap["nodeJoin"].toInt());
+                                   ^~~~~~~~~~~~~~~~~~~~~~
+main.cc:523:35: note: suggested alternative: ‘closestPredecessor’
+   QByteArray closestPredecessor = findClosestPredecessor(receivedMap["nodeJoin"].toInt());
+                                   ^~~~~~~~~~~~~~~~~~~~~~
+                                   closestPredecessor
+main.cc:526:37: error: no matching function for call to ‘QMap<QString, QVariant>::insert(const char [14])’
+   receivedMap.insert("findSuccessor");
+                                     ^
+In file included from /usr/include/QtCore/qdebug.h:48:0,
+                 from /usr/include/QtCore/QDebug:1,
+                 from main.cc:6:
+/usr/include/QtCore/qmap.h:559:51: note: candidate: QMap<Key, T>::iterator QMap<Key, T>::insert(const Key&, const T&) [with Key = QString; T = QVariant]
+ Q_INLINE_TEMPLATE typename QMap<Key, T>::iterator QMap<Key, T>::insert(const Key &akey,
+                                                   ^~~~~~~~~~~~
+/usr/include/QtCore/qmap.h:559:51: note:   candidate expects 2 arguments, 1 provided
+main.cc:528:73: error: ‘QByteArray::operator QNoImplicitBoolCast() const’ is private within this context
+   socket->writeDatagram(findSuccessorMsg, fingerTable[closestPredecessor][3].toHostAddress(), fingerTable[closestPredecessor][4].toInt());
+                                                                         ^
+In file included from /usr/include/QtCore/qstring.h:46:0,
+                 from /usr/include/QtCore/qobject.h:48,
+                 from /usr/include/QtGui/qlayout.h:45,
+                 from /usr/include/QtGui/qboxlayout.h:45,
+                 from /usr/include/QtGui/QVBoxLayout:1,
+                 from main.cc:4:
+/usr/include/QtCore/qbytearray.h:383:5: note: declared private here
+     operator QNoImplicitBoolCast() const;
+     ^~~~~~~~
+main.cc:528:76: error: invalid user-defined conversion from ‘int’ to ‘const QByteArray&’ [-fpermissive]
+   socket->writeDatagram(findSuccessorMsg, fingerTable[closestPredecessor][3].toHostAddress(), fingerTable[closestPredecessor][4].toInt());
+                                                                            ^
+In file included from /usr/include/QtCore/qstring.h:46:0,
+                 from /usr/include/QtCore/qobject.h:48,
+                 from /usr/include/QtGui/qlayout.h:45,
+                 from /usr/include/QtGui/qboxlayout.h:45,
+                 from /usr/include/QtGui/QVBoxLayout:1,
+                 from main.cc:4:
+/usr/include/QtCore/qbytearray.h:150:5: note: candidate is: QByteArray::QByteArray(const char*) <near match>
+     QByteArray(const char *);
+     ^~~~~~~~~~
+/usr/include/QtCore/qbytearray.h:150:5: note:   conversion of argument 1 would be ill-formed:
+main.cc:528:76: error: invalid conversion from ‘int’ to ‘const char*’ [-fpermissive]
+   socket->writeDatagram(findSuccessorMsg, fingerTable[closestPredecessor][3].toHostAddress(), fingerTable[closestPredecessor][4].toInt());
+                                                                            ^
+main.cc:528:76: error: invalid conversion from ‘int’ to ‘const char*’ [-fpermissive]
+In file included from /usr/include/QtCore/qstring.h:46:0,
+                 from /usr/include/QtCore/qobject.h:48,
+                 from /usr/include/QtGui/qlayout.h:45,
+                 from /usr/include/QtGui/qboxlayout.h:45,
+                 from /usr/include/QtGui/QVBoxLayout:1,
+                 from main.cc:4:
+/usr/include/QtCore/qbytearray.h:150:5: note:   initializing argument 1 of ‘QByteArray::QByteArray(const char*)’
+     QByteArray(const char *);
+     ^~~~~~~~~~
+In file included from /usr/include/QtCore/qdebug.h:46:0,
+                 from /usr/include/QtCore/QDebug:1,
+                 from main.cc:6:
+/usr/include/QtCore/qhash.h:738:22: note:   initializing argument 1 of ‘T& QHash<K, V>::operator[](const Key&) [with Key = QByteArray; T = QList<QByteArray>]’
+ Q_INLINE_TEMPLATE T &QHash<Key, T>::operator[](const Key &akey)
+                      ^~~~~~~~~~~~~
+main.cc:528:78: error: ‘class QList<QByteArray>’ has no member named ‘toHostAddress’
+   socket->writeDatagram(findSuccessorMsg, fingerTable[closestPredecessor][3].toHostAddress(), fingerTable[closestPredecessor][4].toInt());
+                                                                              ^~~~~~~~~~~~~
+main.cc:528:125: error: ‘QByteArray::operator QNoImplicitBoolCast() const’ is private within this context
+ tagram(findSuccessorMsg, fingerTable[closestPredecessor][3].toHostAddress(), fingerTable[closestPredecessor][4].toInt());
+                                                                                                            ^
+In file included from /usr/include/QtCore/qstring.h:46:0,
+                 from /usr/include/QtCore/qobject.h:48,
+                 from /usr/include/QtGui/qlayout.h:45,
+                 from /usr/include/QtGui/qboxlayout.h:45,
+                 from /usr/include/QtGui/QVBoxLayout:1,
+                 from main.cc:4:
+/usr/include/QtCore/qbytearray.h:383:5: note: declared private here
+     operator QNoImplicitBoolCast() const;
+     ^~~~~~~~
+main.cc:528:128: error: invalid user-defined conversion from ‘int’ to ‘const QByteArray&’ [-fpermissive]
+ ram(findSuccessorMsg, fingerTable[closestPredecessor][3].toHostAddress(), fingerTable[closestPredecessor][4].toInt());
+                                                                                                            ^
+In file included from /usr/include/QtCore/qstring.h:46:0,
+                 from /usr/include/QtCore/qobject.h:48,
+                 from /usr/include/QtGui/qlayout.h:45,
+                 from /usr/include/QtGui/qboxlayout.h:45,
+                 from /usr/include/QtGui/QVBoxLayout:1,
+                 from main.cc:4:
+/usr/include/QtCore/qbytearray.h:150:5: note: candidate is: QByteArray::QByteArray(const char*) <near match>
+     QByteArray(const char *);
+     ^~~~~~~~~~
+/usr/include/QtCore/qbytearray.h:150:5: note:   conversion of argument 1 would be ill-formed:
+main.cc:528:128: error: invalid conversion from ‘int’ to ‘const char*’ [-fpermissive]
+ ram(findSuccessorMsg, fingerTable[closestPredecessor][3].toHostAddress(), fingerTable[closestPredecessor][4].toInt());
+                                                                                                            ^
+main.cc:528:128: error: invalid conversion from ‘int’ to ‘const char*’ [-fpermissive]
+In file included from /usr/include/QtCore/qstring.h:46:0,
+                 from /usr/include/QtCore/qobject.h:48,
+                 from /usr/include/QtGui/qlayout.h:45,
+                 from /usr/include/QtGui/qboxlayout.h:45,
+                 from /usr/include/QtGui/QVBoxLayout:1,
+                 from main.cc:4:
+/usr/include/QtCore/qbytearray.h:150:5: note:   initializing argument 1 of ‘QByteArray::QByteArray(const char*)’
+     QByteArray(const char *);
+     ^~~~~~~~~~
+In file included from /usr/include/QtCore/qdebug.h:46:0,
+                 from /usr/include/QtCore/QDebug:1,
+                 from main.cc:6:
+/usr/include/QtCore/qhash.h:738:22: note:   initializing argument 1 of ‘T& QHash<K, V>::operator[](const Key&) [with Key = QByteArray; T = QList<QByteArray>]’
+ Q_INLINE_TEMPLATE T &QHash<Key, T>::operator[](const Key &akey)
+                      ^~~~~~~~~~~~~
+main.cc:528:130: error: ‘class QList<QByteArray>’ has no member named ‘toInt’; did you mean ‘count’?
+ ram(findSuccessorMsg, fingerTable[closestPredecessor][3].toHostAddress(), fingerTable[closestPredecessor][4].toInt());
+                                                                                                              ^~~~~
+                                                                                                                                  count
+main.cc:538:65: error: no matching function for call to ‘QMap<QString, QVariant>::insert(const char [17], QHostAddress&)’
+    receivedMap.insert("successorAddress", successor.second.first);
+                                                                 ^
+In file included from /usr/include/QtCore/qdebug.h:48:0,
+                 from /usr/include/QtCore/QDebug:1,
+                 from main.cc:6:
+/usr/include/QtCore/qmap.h:559:51: note: candidate: QMap<Key, T>::iterator QMap<Key, T>::insert(const Key&, const T&) [with Key = QString; T = QVariant]
+ Q_INLINE_TEMPLATE typename QMap<Key, T>::iterator QMap<Key, T>::insert(const Key &akey,
+                                                   ^~~~~~~~~~~~
+/usr/include/QtCore/qmap.h:559:51: note:   no known conversion for argument 2 from ‘QHostAddress’ to ‘const QVariant&’
+main.cc:541:72: error: no matching function for call to ‘NetSocket::writeDatagram(QByteArray&, QHostAddress*&, quint16*&)’
+    socket->writeDatagram(newNodeSuccessorMsg, senderAddress, senderPort);
+                                                                        ^
+In file included from /usr/include/QtNetwork/QUdpSocket:1:0,
+                 from main.hh:7,
+                 from main.cc:8:
+/usr/include/QtNetwork/qudpsocket.h:95:12: note: candidate: qint64 QUdpSocket::writeDatagram(const char*, qint64, const QHostAddress&, quint16)
+     qint64 writeDatagram(const char *data, qint64 len, const QHostAddress &host, quint16 port);
+            ^~~~~~~~~~~~~
+/usr/include/QtNetwork/qudpsocket.h:95:12: note:   candidate expects 4 arguments, 3 provided
+/usr/include/QtNetwork/qudpsocket.h:96:19: note: candidate: qint64 QUdpSocket::writeDatagram(const QByteArray&, const QHostAddress&, quint16)
+     inline qint64 writeDatagram(const QByteArray &datagram, const QHostAddress &host, quint16 port)
+                   ^~~~~~~~~~~~~
+/usr/include/QtNetwork/qudpsocket.h:96:19: note:   no known conversion for argument 2 from ‘QHostAddress*’ to ‘const QHostAddress&’
+main.cc:546:53: error: ‘QVariant::QVariant(void*)’ is private within this context
+   receivedMap.insert("newNodeAddress", senderAddress);
+                                                     ^
+In file included from /usr/include/QtCore/qlocale.h:45:0,
+                 from /usr/include/QtCore/qtextstream.h:48,
+                 from /usr/include/QtCore/qdebug.h:50,
+                 from /usr/include/QtCore/QDebug:1,
+                 from main.cc:6:
+/usr/include/QtCore/qvariant.h:429:12: note: declared private here
+     inline QVariant(void *) { Q_ASSERT(false); }
+            ^~~~~~~~
+main.cc:547:47: error: ‘QVariant::QVariant(void*)’ is private within this context
+   receivedMap.insert("newNodePort", senderPort);
+                                               ^
+In file included from /usr/include/QtCore/qlocale.h:45:0,
+                 from /usr/include/QtCore/qtextstream.h:48,
+                 from /usr/include/QtCore/qdebug.h:50,
+                 from /usr/include/QtCore/QDebug:1,
+                 from main.cc:6:
+/usr/include/QtCore/qvariant.h:429:12: note: declared private here
+     inline QVariant(void *) { Q_ASSERT(false); }
+            ^~~~~~~~
+main.cc:549:25: error: ‘findCLosestPredMsg’ was not declared in this scope
+   socket->writeDatagram(findCLosestPredMsg, successor.second.first, successor.second.second);
+                         ^~~~~~~~~~~~~~~~~~
+main.cc:549:25: note: suggested alternative: ‘findClosestPredMsg’
+   socket->writeDatagram(findCLosestPredMsg, successor.second.first, successor.second.second);
+                         ^~~~~~~~~~~~~~~~~~
+                         findClosestPredMsg
+main.cc:567:9: error: ‘class MessageSender’ has no member named ‘predCheckTimer’; did you mean ‘peerCheck’?
+   this->predCheckTimer->start(10000);
+         ^~~~~~~~~~~~~~
+         peerCheck
+main.cc:576:24: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+   if(predecessor.first == -1) {
+      ~~~~~~~~~~~~~~~~~~^~~~~
+main.cc:586:50: error: no matching function for call to ‘QMap<QString, QVariant>::insert(const char [12], QHostAddress&)’
+    predReply.insert("nodeAddress", predInfo.first);
+                                                  ^
+In file included from /usr/include/QtCore/qdebug.h:48:0,
+                 from /usr/include/QtCore/QDebug:1,
+                 from main.cc:6:
+/usr/include/QtCore/qmap.h:559:51: note: candidate: QMap<Key, T>::iterator QMap<Key, T>::insert(const Key&, const T&) [with Key = QString; T = QVariant]
+ Q_INLINE_TEMPLATE typename QMap<Key, T>::iterator QMap<Key, T>::insert(const Key &akey,
+                                                   ^~~~~~~~~~~~
+/usr/include/QtCore/qmap.h:559:51: note:   no known conversion for argument 2 from ‘QHostAddress’ to ‘const QVariant&’
+main.cc:619:25: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+   if((predecessor.first == -1) || (tempNodeID > this->predecessor && tempNodeID < this->nodeID)) {
+       ~~~~~~~~~~~~~~~~~~^~~~~
+main.cc:619:47: error: no match for ‘operator>’ (operand types are ‘quint32 {aka unsigned int}’ and ‘QPair<unsigned int, QPair<QHostAddress, short unsigned int> >’)
+   if((predecessor.first == -1) || (tempNodeID > this->predecessor && tempNodeID < this->nodeID)) {
+                                    ~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~
+In file included from /usr/include/QtCore/qstring.h:45:0,
+                 from /usr/include/QtCore/qobject.h:48,
+                 from /usr/include/QtGui/qlayout.h:45,
+                 from /usr/include/QtGui/qboxlayout.h:45,
+                 from /usr/include/QtGui/QVBoxLayout:1,
+                 from main.cc:4:
+/usr/include/QtCore/qchar.h:397:13: note: candidate: bool operator>(QChar, QChar)
+ inline bool operator>(QChar c1, QChar c2) { return c1.unicode() > c2.unicode(); }
+             ^~~~~~~~
+/usr/include/QtCore/qchar.h:397:13: note:   no known conversion for argument 2 from ‘QPair<unsigned int, QPair<QHostAddress, short unsigned int> >’ to ‘QChar’
+In file included from /usr/include/QtCore/qstring.h:46:0,
+                 from /usr/include/QtCore/qobject.h:48,
+                 from /usr/include/QtGui/qlayout.h:45,
+                 from /usr/include/QtGui/qboxlayout.h:45,
+                 from /usr/include/QtGui/QVBoxLayout:1,
+                 from main.cc:4:
+/usr/include/QtCore/qbytearray.h:551:13: note: candidate: bool operator>(const QByteArray&, const QByteArray&)
+ inline bool operator>(const QByteArray &a1, const QByteArray &a2)
+             ^~~~~~~~
+/usr/include/QtCore/qbytearray.h:551:13: note:   no known conversion for argument 2 from ‘QPair<unsigned int, QPair<QHostAddress, short unsigned int> >’ to ‘const QByteArray&’
+/usr/include/QtCore/qbytearray.h:553:13: note: candidate: bool operator>(const QByteArray&, const char*)
+ inline bool operator>(const QByteArray &a1, const char *a2)
+             ^~~~~~~~
+/usr/include/QtCore/qbytearray.h:553:13: note:   no known conversion for argument 2 from ‘QPair<unsigned int, QPair<QHostAddress, short unsigned int> >’ to ‘const char*’
+/usr/include/QtCore/qbytearray.h:555:13: note: candidate: bool operator>(const char*, const QByteArray&)
+ inline bool operator>(const char *a1, const QByteArray &a2)
+             ^~~~~~~~
+/usr/include/QtCore/qbytearray.h:555:13: note:   no known conversion for argument 2 from ‘QPair<unsigned int, QPair<QHostAddress, short unsigned int> >’ to ‘const QByteArray&’
+In file included from /usr/include/QtCore/qobject.h:48:0,
+                 from /usr/include/QtGui/qlayout.h:45,
+                 from /usr/include/QtGui/qboxlayout.h:45,
+                 from /usr/include/QtGui/QVBoxLayout:1,
+                 from main.cc:4:
+/usr/include/QtCore/qstring.h:942:32: note: candidate: bool operator>(const char*, const QString&)
+ inline QT_ASCII_CAST_WARN bool operator>(const char *s1, const QString &s2)
+                                ^~~~~~~~
+/usr/include/QtCore/qstring.h:942:32: note:   no known conversion for argument 2 from ‘QPair<unsigned int, QPair<QHostAddress, short unsigned int> >’ to ‘const QString&’
+/usr/include/QtCore/qstring.h:955:32: note: candidate: bool operator>(const char*, const QLatin1String&)
+ inline QT_ASCII_CAST_WARN bool operator>(const char *s1, const QLatin1String &s2)
+                                ^~~~~~~~
+/usr/include/QtCore/qstring.h:955:32: note:   no known conversion for argument 2 from ‘QPair<unsigned int, QPair<QHostAddress, short unsigned int> >’ to ‘const QLatin1String&’
+/usr/include/QtCore/qstring.h:970:13: note: candidate: bool operator>(const QLatin1String&, const QLatin1String&)
+ inline bool operator>(const QLatin1String &s1, const QLatin1String &s2)
+             ^~~~~~~~
+/usr/include/QtCore/qstring.h:970:13: note:   no known conversion for argument 1 from ‘quint32 {aka unsigned int}’ to const QLatin1String&’
+/usr/include/QtCore/qstring.h:1221:13: note: candidate: bool operator>(const QStringRef&, const QStringRef&)
+ inline bool operator>(const QStringRef &s1, const QStringRef &s2)
+             ^~~~~~~~
+/usr/include/QtCore/qstring.h:1221:13: note:   no known conversion for argument 2 from ‘QPair<unsigned int, QPair<QHostAddress, short unsigned int> >’ to ‘const QStringRef&’
+In file included from /usr/include/QtCore/qhash.h:49:0,
+                 from /usr/include/QtCore/qdebug.h:46,
+                 from /usr/include/QtCore/QDebug:1,
+                 from main.cc:6:
+/usr/include/QtCore/qpair.h:84:24: note: candidate: template<class T1, class T2> bool operator>(const QPair<T1, T2>&, const QPair<T1, T2>&)
+ Q_INLINE_TEMPLATE bool operator>(const QPair<T1, T2> &p1, const QPair<T1, T2> &p2)
+                        ^~~~~~~~
+/usr/include/QtCore/qpair.h:84:24: note:   template argument deduction/substitution failed:
+main.cc:619:55: note:   mismatched types ‘const QPair<T1, T2>’ and ‘quint32 {aka unsigned int}’
+   if((predecessor.first == -1) || (tempNodeID > this->predecessor && tempNodeID < this->nodeID)) {
+                                                       ^~~~~~~~~~~
+main.cc: In member function ‘void MessageSender::handleRumorMessage(QVariantMap, QHostAddress*, quint16*)’:
+main.cc:727:6: warning: unused variable ‘seqNo’ [-Wunused-variable]
+  int seqNo = receivedMap["SeqNo"].toInt();
+      ^~~~~
+main.cc: In member function ‘bool MessageSender::findSuccessor(quint32)’:
+main.cc:942:48: error: expression cannot be used as a function
+  (newNode < nodeID && newNode < successor.first)) {
+                                                ^
+main.cc: At global scope:
+main.cc:948:65: error: no ‘QByteArray MessageSender::findClosestPredecessor(quint32)’ member function declared in class ‘MessageSender’
+ QByteArray MessageSender::findClosestPredecessor(quint32 newNode) {
+                                                                 ^
+main.cc:1016:44: error: no ‘void MessageSender::joinChord(QString)’ member function declared in class ‘MessageSender’
+ void MessageSender::joinChord(QString input) {
+                                            ^
+main.cc: In member function ‘void MessageSender::joinGuiChord()’:
+main.cc:1080:3: error: ‘joinChord’ was not declared in this scope
+   joinChord(joinChordLine->toPlainText());
+   ^~~~~~~~~
+main.cc:1080:3: note: suggested alternative: ‘joinGuiChord’
+   joinChord(joinChordLine->toPlainText());
+   ^~~~~~~~~
+   joinGuiChord
+main.cc: In member function ‘void MessageSender::chordLookup(QHostInfo)’:
+main.cc:1132:37: error: ‘ipTest’ was not declared in this scope
+   socket->writeDatagram(newNodeMsg, ipTest, portNum);
+                                     ^~~~~~
+make: *** [Makefile:215: main.o] Error 1
+-bash-4.4$ 

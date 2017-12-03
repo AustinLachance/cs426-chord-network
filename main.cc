@@ -281,14 +281,17 @@ MessageSender::MessageSender()
 	originID = hostName + idVal;
 	QCA::Initializer qcainit;
 	qDebug() << "hash shit" << endl;
-	QCA::Hash hashObj("sha1");
-	QByteArray dummyByte = originID.toUtf8();
-	hashObj.update(dummyByte);
+	// QCA::Hash hashObj("sha1");
+	// QByteArray dummyByte = originID.toUtf8();
+	// hashObj.update(dummyByte);
+	
+	QByteArray hashedShit = QCA::Hash("sha1").hash(originID.toLatin1()).toByteArray();
+	
 	qDebug() << "tryna hash my originID" << endl;
 	QByteArray shit = hashObj.final().toByteArray();
-	qDebug() << hashObj.final().toByteArray();
-	qDebug() << hashObj.final().toByteArray().toHex();
-	nodeID = shit.toInt() % 32;
+	qDebug() << hashedShit << endl;
+	qDebug() << hashedShit.toHex() << endl;
+	nodeID = hashedShit.toInt() % 32;
 
 	qDebug() << "My OriginID is " << originID << endl;
 	qDebug() << "My nodeID TEST is " << QString::number(nodeID) << endl;

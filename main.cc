@@ -294,7 +294,7 @@ MessageSender::MessageSender()
 	QDataStream in(hashedShit.right(2)); //< Attach a read-only stream to it
 	in.setByteOrder(QDataStream::LittleEndian); //< Set the proper byte order
 
-	qint16 result; //< The result you want
+	quint16 result; //< The result you want
 	in >> result; //< Just read it from the stream
 	qDebug() << "TEST: " << QString::number(result) << endl;
 	nodeID = result %32;

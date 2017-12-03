@@ -280,9 +280,13 @@ MessageSender::MessageSender()
 	QString idVal = QString::number(qrand());
 	QString hostName = QHostInfo::localHostName();
 	originID = hostName + idVal;
-	QCA::Hash shaHash("sha1");
+	QCA::Initializer qcainit;
+	qDebug() << "hash shit" << endl;
+	QCA::Hash hashObj("sha1");
 	QByteArray dummyByte(originID.toLatin1());
-	nodeID = QCA::Hash("sha1").hash(dummyByte).toByteArray().toInt() % 5;
+	hashObj.update(dummyByte);
+	qDebug() << "tryna hash my originID" << endl;
+	nodeID = hashObj.final().toByteArray().toInt() % 5;
 
 	qDebug() << "My OriginID is " << originID << endl;
 	qDebug() << "My nodeID is " << QString::number(nodeID) << endl;

@@ -285,7 +285,7 @@ MessageSender::MessageSender()
 	QByteArray dummyByte = originID.toUtf8();
 	hashObj.update(dummyByte);
 	qDebug() << "tryna hash my originID" << endl;
-	qByteArray shit = hashObj.final().toByteArray();
+	QByteArray shit = hashObj.final().toByteArray();
 	qDebug() << hashObj.final().toString();
 	qDebug() << hashObj.final().toHex();
 	nodeID = shit.toInt() % 32;

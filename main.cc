@@ -292,7 +292,7 @@ MessageSender::MessageSender()
 	qDebug() << hashedShit.right(2).toHex() << endl;
 	
 	QDataStream in(hashedShit.right(2)); //< Attach a read-only stream to it
-	in.setByteOrder(QDataStream::LittleEndian); //< Set the proper byte order
+	in.setByteOrder(QDataStream::BigEndian); //< Set the proper byte order
 
 	quint16 result; //< The result you want
 	in >> result; //< Just read it from the stream

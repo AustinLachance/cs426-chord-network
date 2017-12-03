@@ -311,7 +311,7 @@ MessageSender::MessageSender()
 	MultiLineEdit* addPeersLine = chat->getAddPeersLine();
 	MultiLineEdit* downloadFileLine = chat->getDownloadFileLine();
 	MultiLineEdit* fileSearchLine = chat->getFileSearchLine();
-	MultiLineEdite* joinChordLine = chat->getJoinChordLine();
+	MultiLineEdit* joinChordLine = chat->getJoinChordLine();
 	QListWidget *fileSearchResultsList = chat->getFileSearchResultsList();
 	QPushButton *shareFileButton = chat->getShareFileButton();
 	successor.first = -1;
@@ -391,7 +391,7 @@ void MessageSender::stabilizePredecessor(QVariantMap map) {
 	quint32 succID = this->successor.first;
 	
 	QPair<QHostAddress, quint16> tempNodeInfo;
-	tempNodeInfo.first = map["nodeAddress"].toHostAddress();
+	tempNodeInfo.first = QHostAddress(map["nodeAddress"].toInt());
 	tempNodeInfo.second = map["nodePort"].toInt();
 	
 	QPair<quint32, QPair<QHostAddress, quint16>> tempNode(tempNodeID, tempNodeInfo);
@@ -510,10 +510,10 @@ void MessageSender::onReceive()
 		//call successor with this newChord
 		if (findSuccessor(receivedMap["nodeJoin"].toInt())) {
 			receivedMap.insert("successorID", successor.first);
-			receivedMap.insert("successorAddress", successor.second.first.toIPv4Address());
+			receivedMap.insert("successorAddress", successor.second.first);
 			receivedMap.insert("sucessorPort", successor.second.second);
 			QByteArray newNodeSuccessorMsg = getSerialized(receivedMap);
-			socket->writeDatagram(newNodeSuccessorMsg, receivedMap["newNodeAddress"].toHostAddress(), receivedMap["newNodePort"].toInt());
+			socket->writeDatagram(newNodeSuccessorMsg, QHostAddress(receivedMap["newNodeAddress"].toInt()), receivedMap["newNodePort"].toInt());
 			return;
 		}
 		else {
@@ -533,7 +533,7 @@ void MessageSender::onReceive()
 		receivedMap.remove("findClosestPredecessor");
 		receivedMap.insert("findSuccessor", -1);
 		QByteArray findSuccessorMsg = getSerialized(receivedMap);
-		socket->writeDatagram(findSuccessorMsg, fingerTable[closestPredecessor][3].toHostAddress(), fingerTable[closestPredecessor][4].toInt());
+		socket->writeDatagram(findSuccessorMsg, QHostAddress(fingerTable[closestPredecessor][3].toInt()), fingerTable[closestPredecessor][4].toInt());
 		return;
 	}
 	
@@ -546,13 +546,13 @@ void MessageSender::onReceive()
 			receivedMap.insert("successorAddress", successor.second.first);
 			receivedMap.insert("sucessorPort", successor.second.second);
 			QByteArray newNodeSuccessorMsg = getSerialized(receivedMap);
-			socket->writeDatagram(newNodeSuccessorMsg, senderAddress, senderPort);
+			socket->writeDatagram(newNodeSuccessorMsg, *senderAddress, *senderPort);
 			return;
 		}
 		//have our successor find its closest predecessor, then the closest predecessor will find successor
 		receivedMap.insert("findClosestPredecessor", -1);
-		receivedMap.insert("newNodeAddress", senderAddress);
-		receivedMap.insert("newNodePort", senderPort);
+		receivedMap.insert("newNodeAddress", *senderAddress);
+		receivedMap.insert("newNodePort", *senderPort);
 		QByteArray findClosestPredMsg = getSerialized(receivedMap);
 		socket->writeDatagram(findClosestPredMsg, successor.second.first, successor.second.second);
 		return;

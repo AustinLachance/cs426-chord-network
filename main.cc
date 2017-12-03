@@ -273,12 +273,6 @@ MessageSender::MessageSender()
 	//Create a chord fileTable - id maps to all the blocks of a file
 	fileTable = new QHash<QByteArray, QList<QByteArray>>();
 
-	// Add command line peers
-	QStringList args = QCoreApplication::arguments();
-	if(args.size() > 1) {
-		createFingerTable();
-	}
-
 	// Create a unique ID for this instance of MessageSender
 	qint64 seedVal = QDateTime::currentMSecsSinceEpoch();
 	qsrand(seedVal);
@@ -295,6 +289,12 @@ MessageSender::MessageSender()
 
 	qDebug() << "My OriginID is " << originID << endl;
 	qDebug() << "My nodeID TEST is " << QString::number(nodeID) << endl;
+	
+	// Add command line peers
+	QStringList args = QCoreApplication::arguments();
+	if(args.size() > 1) {
+		createFingerTable();
+	}
 	
 	// Create a timer for chord stabilization
 	stabilizeTimer = new QTimer(this);

@@ -270,13 +270,7 @@ MessageSender::MessageSender()
 	QStringList args = QCoreApplication::arguments();
 	if(args.size() > 1) {
 		for(int i=1; i < args.size(); i++) {
-			if(args[i] == "-noforward") {
-				qDebug() << "NO FORWARD!!!" << endl;
-				noForward = true;
-			}
-			else {
-				addPeer(args[i]);
-			}
+			addPeer(args[i]);
 		}
 	}
 
@@ -286,6 +280,7 @@ MessageSender::MessageSender()
 	QString idVal = QString::number(qrand());
 	QString hostName = QHostInfo::localHostName();
 	originID = hostName + idVal;
+	QCA::Hash shaHash("sha1");
 	nodeID = QCA::Hash("sha1").hash(originID).toByteArray() % 5;
 
 	qDebug() << "My OriginID is " << originID << endl;
@@ -339,9 +334,10 @@ QString MessageSender::getOriginID() {
 
 bool MessageSender::createFingerTable() {
 	fingerTable = new QHash<QByteArray, QList<QByteArray>>();
-	QByteArray start = 1;
-	for (QByteArray i = 0; i < 5; i++) {
-		fingerTable->insert((nodeID + start) % 5, QList<QByteArray>() << (nodeID + start) % 5 << (nodeID + start * 2) % 2 << -1);
+	int start = 1;
+	for (int i = 0; i < 5; i++) {
+		fingerTable->insert(QByteArray::number((nodeID + start) % 5), QList<QByteArray>() << QByteArray((nodeID + start) % 5) << QByteArray((nodeID + start * 2) % 5) << QByteArray(-1));
+		start *= 2;
 	}
 }
 
@@ -540,13 +536,11 @@ void MessageSender::handleRumorMessage(QVariantMap receivedMap, QHostAddress *se
 
 		// Start mongering if noForward flag is NOT set
 		QByteArray byteArrayToSender;
-		if(!noForward) {
-			Peer neighbor = getNeighbor();
-			int tempPort = neighbor.getPort();
-			QHostAddress address = neighbor.getAddress();
-			byteArrayToSender = getSerialized(receivedMap);
-			socket->writeDatagram(byteArrayToSender, address, tempPort);
-		}
+		Peer neighbor = getNeighbor();
+		int tempPort = neighbor.getPort();
+		QHostAddress address = neighbor.getAddress();
+		byteArrayToSender = getSerialized(receivedMap);
+		socket->writeDatagram(byteArrayToSender, address, tempPort);
 	}
 }
 
@@ -591,28 +585,11 @@ void MessageSender::handleBlockReplyMessage(QVariantMap receivedMap, QString sen
 				fileHash.insert(hashVal, receivedData);
 			}
 			
-
-			// Build the new metafile to support large files
-			if(this->numInception > 0) {
-				fileBuilder.append(receivedData);
-			}
-
 			// Request next 20 if possible else reset value of requesting file to null
 			if(!fileReceiving.isEmpty()) {
 				QVariantMap blockRequest = createBlockRequest(senderOrigin, originID);
 				sendPointToPoint(blockRequest);
 			}
-			// see if this was a nested metafile. if so, construct next metafile from received blocks and begin requesting again
-			else if(this->numInception > 0) {
-				
-				this->numInception--;
-				qDebug() << "level complete. Do the next one. Inception level = "<< QString::number(this->numInception) << endl;
-
-				qDebug() << fileBuilder.toHex() << endl << endl;
-				fileReceiving = fileBuilder;
-				QVariantMap blockRequest = createBlockRequest(senderOrigin, originID);
-				sendPointToPoint(blockRequest);
-			}						
 		}
 		
 

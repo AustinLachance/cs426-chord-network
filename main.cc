@@ -290,6 +290,8 @@ MessageSender::MessageSender()
 	in.setByteOrder(QDataStream::BigEndian);
 	quint32 result; 
 	in >> result;
+	qDebug() << "Hex right 2 bytes " << nodeHash.right(2).toHex();
+	qDebug() << "result: " << QString::number(result);
 	nodeID = result % 256;
 	
 	

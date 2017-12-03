@@ -281,7 +281,7 @@ MessageSender::MessageSender()
 	QString hostName = QHostInfo::localHostName();
 	originID = hostName + idVal;
 	QCA::Hash shaHash("sha1");
-	nodeID = QCA::Hash("sha1").hash(originID).toByteArray() % 5;
+	nodeID = QCA::Hash("sha1").hash(originID.toByteArray()).toByteArray() % 5;
 
 	qDebug() << "My OriginID is " << originID << endl;
 	
@@ -336,7 +336,7 @@ bool MessageSender::createFingerTable() {
 	fingerTable = new QHash<QByteArray, QList<QByteArray>>();
 	int start = 1;
 	for (int i = 0; i < 5; i++) {
-		fingerTable->insert(QByteArray::number((nodeID + start) % 5), QList<QByteArray>() << QByteArray((nodeID + start) % 5) << QByteArray((nodeID + start * 2) % 5) << QByteArray(-1));
+		fingerTable->insert(QByteArray::number((nodeID + start) % 5), QList<QByteArray>() << QByteArray((nodeID + start) % 5) << QByteArray((nodeID + start * 2) % 5) << QByteArray::number(-1));
 		start *= 2;
 	}
 }

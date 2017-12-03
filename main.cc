@@ -289,6 +289,7 @@ MessageSender::MessageSender()
 	
 	qDebug() << "tryna hash my originID" << endl;
 	qDebug() << hashedShit << endl;
+	qDebug() << hashedShit.toInt() << endl;
 	qDebug() << hashedShit.toHex() << endl;
 	nodeID = hashedShit.toInt() % 32;
 

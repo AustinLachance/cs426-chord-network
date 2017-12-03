@@ -290,8 +290,14 @@ MessageSender::MessageSender()
 	qDebug() << "tryna hash my originID" << endl;
 	qDebug() << hashedShit << endl;
 	qDebug() << hashedShit.right(2).toHex() << endl;
-	qDebug() << "TEST: " << hashedShit.right(2).toInt() << endl;
-	nodeID = hashedShit.right(2).toInt()%32;
+	
+	QDataStream in(hashedShit); //< Attach a read-only stream to it
+	in.setByteOrder(QDataStream::LittleEndian); //< Set the proper byte order
+
+	qint16 result; //< The result you want
+	in >> result; //< Just read it from the stream
+	qDebug() << "TEST: " << QString::number(result) << endl;
+	nodeID = QString::number(result)%32;
 	
 	
 

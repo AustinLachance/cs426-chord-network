@@ -338,7 +338,7 @@ bool MessageSender::createFingerTable() {
 		fingerTable->insert(QByteArray::number((nodeID + start) % 5), QList<QByteArray>() << QByteArray::number((nodeID + start) % 5) << QByteArray::number((nodeID + start * 2) % 5) << QByteArray::number(-1));
 		start *= 2;
 	}
-	for (auto s: fingerTable) {
+	for (auto s: fingerTable->keys()) {
 		qDebug() << fingerTable[s] << endl;
 	}
 	return true;

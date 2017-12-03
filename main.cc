@@ -282,7 +282,7 @@ MessageSender::MessageSender()
 	QCA::Initializer qcainit;
 	qDebug() << "hash shit" << endl;
 	QCA::Hash hashObj("sha1");
-	QByteArray dummyByte = originID.toUTF8();
+	QByteArray dummyByte = originID.toUtf8();
 	hashObj.update(dummyByte);
 	qDebug() << "tryna hash my originID" << endl;
 	nodeID = hashObj.final().toByteArray().toInt() % 32;

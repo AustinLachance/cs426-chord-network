@@ -312,9 +312,6 @@ MessageSender::MessageSender()
 	// User presses return after entering a "targetNodeID:hexDataHash" to download a file
 	connect(downloadFileLine, SIGNAL(returnPressed()), this, SLOT(downloadFile()));
 
-	// User presses return after entering keyword(s) to search for files
-	connect(fileSearchLine, SIGNAL(returnPressed()), this, SLOT(sendInitialSearchRequest()));
-
 	// User double clicks a file to start a download
 	connect(fileSearchResultsList, SIGNAL(itemActivated(QListWidgetItem *)), this, SLOT(startFileDownload(QListWidgetItem *)));
 
@@ -341,6 +338,10 @@ bool MessageSender::createFingerTable() {
 		fingerTable->insert(QByteArray::number((nodeID + start) % 5), QList<QByteArray>() << QByteArray::number((nodeID + start) % 5) << QByteArray::number((nodeID + start * 2) % 5) << QByteArray::number(-1));
 		start *= 2;
 	}
+	for (auto s: fingerTable) {
+		qDebug() << fingerTable[s] << endl;
+	}
+	return true;
 }
 
 // Slot method for when return is pressed

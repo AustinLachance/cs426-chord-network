@@ -154,15 +154,12 @@ public:
 public slots:
 	void gotReturnPressed();
 	void onReceive();
-	void sendTimeoutStatus();
-	void sendRouteRumorTimeout();
 	void peerLookup(QHostInfo host);
 	void addGuiPeer();
 	void startFileDownload(QListWidgetItem * listItem);
 	void openFileDialog();
 	void getFileMetadata(const QStringList &fileList);
 	void downloadFile();
-	void sendInitialSearchRequest();
 
 private:
 	ChatDialog *chat;

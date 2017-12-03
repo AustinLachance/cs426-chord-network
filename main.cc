@@ -921,7 +921,7 @@ int main(int argc, char **argv)
 	QApplication app(argc,argv);
 
 	// Create an instance of messageSender (super class containing chatDialog & socket)
-	MessageSender msgSend;
+	// MessageSender msgSend;
 
 	// Init Crypto
 	QCA::Initializer qcainit;

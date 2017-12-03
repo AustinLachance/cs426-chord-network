@@ -510,7 +510,7 @@ void MessageSender::onReceive()
 		//call successor with this newChord
 		if (findSuccessor(receivedMap["nodeJoin"].toInt())) {
 			receivedMap.insert("successorID", successor.first);
-			receivedMap.insert("successorAddress", successor.second.first);
+			receivedMap.insert("successorAddress", successor.second.first.toIPv4Address());
 			receivedMap.insert("sucessorPort", successor.second.second);
 			QByteArray newNodeSuccessorMsg = getSerialized(receivedMap);
 			socket->writeDatagram(newNodeSuccessorMsg, QHostAddress(receivedMap["newNodeAddress"].toInt()), receivedMap["newNodePort"].toInt());
@@ -520,7 +520,7 @@ void MessageSender::onReceive()
 			receivedMap.remove("findSuccessor");
 			receivedMap.insert("findClosestPredecessor", -1);
 			QByteArray findClosestPredMsg = getSerialized(receivedMap);
-			socket->writeDatagram(findClosestPredMsg, successor.second.first, successor.second.second);
+			socket->writeDatagram(findClosestPredMsg, QHostAddress(successor.second.first.toInt()), successor.second.second);
 			return;
 		}
 		
@@ -543,7 +543,7 @@ void MessageSender::onReceive()
 		if (findSuccessor(receivedMap["nodeJoin"].toInt())) {
 			//send our successor to the new node - i.e the sender
 			receivedMap.insert("successorID", successor.first);
-			receivedMap.insert("successorAddress", successor.second.first);
+			receivedMap.insert("successorAddress", successor.second.first.toIPv4Address());
 			receivedMap.insert("sucessorPort", successor.second.second);
 			QByteArray newNodeSuccessorMsg = getSerialized(receivedMap);
 			socket->writeDatagram(newNodeSuccessorMsg, *senderAddress, *senderPort);
@@ -591,7 +591,7 @@ void MessageSender::onReceive()
 			
 			predReply.insert("predecessorReply", 1);
 			predReply.insert("nodeID", predID);
-			predReply.insert("nodeAddress", predInfo.first);
+			predReply.insert("nodeAddress", predInfo.first.toIPv4Address());
 			predReply.insert("nodePort", predInfo.second);
 		}
 		

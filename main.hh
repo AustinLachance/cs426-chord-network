@@ -190,8 +190,8 @@ private:
 	QString currentSearch;
 	QVariantMap searchResultsMap;
 	
-	QPair<quint32, QPair<QHostAddress, quint16>> successor;
-	QPair<quint32, QPair<QHostAddress, quint16>> predecessor;
+	QPair<int, QPair<QHostAddress, quint16>> successor;
+	QPair<int, QPair<QHostAddress, quint16>> predecessor;
 	QHash<QByteArray, QList<QByteArray>>* fingerTable;
 	QHash<QByteArray, QList<QByteArray>>* fileTable;
 	

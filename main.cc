@@ -285,19 +285,12 @@ MessageSender::MessageSender()
 	// QByteArray dummyByte = originID.toUtf8();
 	// hashObj.update(dummyByte);
 	
-	QByteArray hashedShit = QCA::Hash("sha1").hash(originID.toLatin1()).toByteArray();
-	bool FUCK = true;
-	qDebug() << "tryna hash my originID" << endl;
-	qDebug() << hashedShit.toHex() << endl;
-	qDebug() << hashedShit.right(2).toHex() << endl;
-	
-	QDataStream in(hashedShit.right(2)); //< Attach a read-only stream to it
-	in.setByteOrder(QDataStream::BigEndian); //< Set the proper byte order
-
-	quint16 result; //< The result you want
-	in >> result; //< Just read it from the stream
-	qDebug() << "TEST: " << QString::number(result) << endl;
-	nodeID = result %256;
+	QByteArray nodeHash = QCA::Hash("sha1").hash(originID.toLatin1()).toByteArray();
+	QDataStream in(nodeHash.right(2));
+	in.setByteOrder(QDataStream::BigEndian);
+	quint32 result; 
+	in >> result;
+	nodeID = result % 256;
 	
 	
 
@@ -375,9 +368,9 @@ QString MessageSender::getOriginID() {
 bool MessageSender::createFingerTable() {
 	qDebug() << "My Node ID is "<< QString::number(nodeID);
 	int start = 1;
-	for (int i = 0; i < 5; i++) {
-		fingerTable->insert(QByteArray::number((nodeID + start) % 32), QList<QByteArray>() << QByteArray::number((nodeID + start) % 32) 
-		<< QByteArray::number((nodeID + start * 2) % 32) << QByteArray::number(-1) << QByteArray::number(-1) << QByteArray::number(-1));
+	for (int i = 0; i < 8; i++) {
+		fingerTable->insert(QByteArray::number((nodeID + start) % 256), QList<QByteArray>() << QByteArray::number((nodeID + start) % 256) 
+		<< QByteArray::number((nodeID + start * 2) % 256) << QByteArray::number(-1) << QByteArray::number(-1) << QByteArray::number(-1));
 		start *= 2;
 	}
 	for (auto i = fingerTable->begin(); i != fingerTable->end(); i++) {
@@ -966,9 +959,9 @@ bool MessageSender::findSuccessor(quint32 newNode) {
 }
 
 QByteArray MessageSender::findClosestPredecessor(quint32 newNode) {
-	int i = 16;
+	int i = 128;
 	while (i >= 1) {
-		QByteArray fingerKey = QByteArray::number((nodeID + i) % 32);
+		QByteArray fingerKey = QByteArray::number((nodeID + i) % 256);
 		quint32 successorID = (*fingerTable)[fingerKey][2].toInt();
 		if ((nodeID < successorID && successorID < newNode) || (nodeID < successorID && successorID > newNode)
 		|| (nodeID > successorID && successorID < newNode)) {

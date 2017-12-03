@@ -290,9 +290,9 @@ MessageSender::MessageSender()
 	qDebug() << "tryna hash my originID" << endl;
 	qDebug() << hashedShit << endl;
 	qDebug() << hashedShit.toHex() << endl;
-	qDebug() << hashedShit.right(2).toHex() << endl;
+	qDebug() << hashedShit % 32 << endl;
 	qDebug() << hashedShit.right(2).toHex().toUInt()%32 << endl;
-	nodeID = hashedShit.right(2).toInt()%32;
+	nodeID = hashedShit%32;
 
 	qDebug() << "My OriginID is " << originID << endl;
 	qDebug() << "My nodeID TEST is " << QString::number(nodeID) << endl;

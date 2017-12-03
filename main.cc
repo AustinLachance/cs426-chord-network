@@ -294,7 +294,7 @@ MessageSender::MessageSender()
 	nodeID = hashObj.final().toByteArray().toInt() % 32;
 
 	qDebug() << "My OriginID is " << originID << endl;
-	// qDebug() << "My nodeID is " << QString::number(nodeID) << endl;
+	qDebug() << "My nodeID TEST is " << QString::number(nodeID) << endl;
 	
 	// Create a timer for chord stabilization
 	stabilizeTimer = new QTimer(this);

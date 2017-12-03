@@ -294,7 +294,7 @@ MessageSender::MessageSender()
 	nodeID = hashObj.final().toByteArray().toInt() % 32;
 
 	qDebug() << "My OriginID is " << originID << endl;
-	qDebug() << "My nodeID is " << QString::number(nodeID) << endl;
+	// qDebug() << "My nodeID is " << QString::number(nodeID) << endl;
 	
 	// Create a timer for chord stabilization
 	stabilizeTimer = new QTimer(this);
@@ -359,6 +359,7 @@ QString MessageSender::getOriginID() {
 }
 
 bool MessageSender::createFingerTable() {
+	qDebug() << "My Node ID is "<< QString::number(nodeID);
 	int start = 1;
 	for (int i = 0; i < 5; i++) {
 		fingerTable->insert(QByteArray::number((nodeID + start) % 32), QList<QByteArray>() << QByteArray::number((nodeID + start) % 32) 

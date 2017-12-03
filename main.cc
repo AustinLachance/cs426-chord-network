@@ -297,7 +297,7 @@ MessageSender::MessageSender()
 	quint16 result; //< The result you want
 	in >> result; //< Just read it from the stream
 	qDebug() << "TEST: " << QString::number(result) << endl;
-	nodeID = result %32;
+	nodeID = result %256;
 	
 	
 

@@ -30,6 +30,12 @@ ChatDialog::ChatDialog()
 	addPeersLine->setMaximumHeight(50);
 	QLabel *peersLabel = new QLabel();
 	peersLabel->setText("Add peer with host:port");
+	
+	//Join Chord text editor
+	joinChordLine = new MultiLineEdit();
+	joinChordLine->setMaximumHeight(50);
+	QLabel* chordLabel = new QLabel();
+	chordLabel->setText("Join a peer's chord with host:port");
 
 	// Download File text editor
 	downloadFileLine = new MultiLineEdit();
@@ -43,11 +49,6 @@ ChatDialog::ChatDialog()
 	QLabel *fileSearchLabel = new QLabel();
 	fileSearchLabel->setText("Search for files (separate keywords by spaces)");
 
-	// Private Message List
-	QLabel *privateMsgLabel = new QLabel();
-	privateMsgLabel->setText("Slide into the DMs");
-	privateMsgList = new QListWidget();
-
 	// File Search Results List
 	QLabel *fileSearchResultsLabel = new QLabel();
 	fileSearchResultsLabel->setText("File Search Results");
@@ -59,15 +60,11 @@ ChatDialog::ChatDialog()
 	editingLayout->addWidget(textline);
 	editingLayout->addWidget(peersLabel);
 	editingLayout->addWidget(addPeersLine);
-
-	// List of friends that you can send private messages
-	QVBoxLayout *privateMsgLayout = new QVBoxLayout();
-	privateMsgLayout->addWidget(privateMsgLabel);
-	privateMsgLayout->addWidget(privateMsgList);
+	editingLayout->addWidget(chordLabel);
+	editingLayout->addWidget(joinChordLine);
 
 	QHBoxLayout *bottomLayout = new QHBoxLayout();
 	bottomLayout->addLayout(editingLayout);
-	bottomLayout->addLayout(privateMsgLayout);
 
 	QVBoxLayout *fileLayout = new QVBoxLayout();
 	fileLayout->addWidget(shareFileButton);
@@ -107,6 +104,11 @@ MultiLineEdit *ChatDialog::getAddPeersLine() {
 	return addPeersLine;
 }
 
+// Return the join Chord text line of the ChatDialog
+MultiLineEdit *ChatDialog::getJoinChordLine() {
+	return joinChordLine;
+}
+
 
 // Return the download file text line of the ChatDialog
 MultiLineEdit *ChatDialog::getDownloadFileLine() {
@@ -122,10 +124,6 @@ MultiLineEdit *ChatDialog::getFileSearchLine() {
 // Return the file search results list of the ChatDialog
 QListWidget *ChatDialog::getFileSearchResultsList() {
 	return fileSearchResultsList;
-}
-
-QListWidget *ChatDialog::getPrivateMsgList() {
-	return privateMsgList;
 }
 
 
@@ -246,26 +244,9 @@ MessageSender::MessageSender()
 	if (!socket->bind())
 		exit(1);
 
-	// Private chat window
-	privateChat = new PrivateChat("");
-	MultiLineEdit *privateChatEditor = privateChat->getTextLine();
-
-	// Hop limit and budget
-	this->hopLimit = 5;
-	this->budget = 2;
-	this->maxBudget = 100;
-	this->maxResults = 10;
-	this->numInception = 0;
-
 	// File Dialog Window
 	fileDialog = new QFileDialog();
 	fileDialog->setFileMode(QFileDialog::ExistingFiles);
-
-	// Set chatCounter to 1 and create the statusMap and set noForward flag to default false
-	QVariantMap wantMap;
-	statusMap.insert("Want", wantMap);
-	chatCounter = 1;
-	noForward = false;
 
 	// Add local peers
 	int portMin = socket->getMyPortMin();
@@ -305,28 +286,23 @@ MessageSender::MessageSender()
 	QString idVal = QString::number(qrand());
 	QString hostName = QHostInfo::localHostName();
 	originID = hostName + idVal;
+	nodeID = QCA::Hash("sha1").hash(originID).toByteArray() % 5;
 
 	qDebug() << "My OriginID is " << originID << endl;
+	
+	//Create a chord fingerTable - id maps to size 3 list (start, end, successor)
+	createFingerTable();
+	
+	//Create a chord fileTable - id maps to all the blocks of a file
+	fileTable = new QHash<QByteArray, QList<QByteArray>>();
 
 	// Get references to private members of ChatDialog
 	MultiLineEdit* textline = chat->getTextLine();
 	MultiLineEdit* addPeersLine = chat->getAddPeersLine();
 	MultiLineEdit* downloadFileLine = chat->getDownloadFileLine();
 	MultiLineEdit* fileSearchLine = chat->getFileSearchLine();
-	QListWidget *privateMsgList = chat->getPrivateMsgList();
 	QListWidget *fileSearchResultsList = chat->getFileSearchResultsList();
 	QPushButton *shareFileButton = chat->getShareFileButton();
-	// addInitialPrivateMsgPeers();
-
-	// Create timer to send status every 10 seconds
-	timer = new QTimer(this);
-
-	// Create routing timer to send route rumor every minute
-	routeRumorTimer = new QTimer(this);
-
-	// Create search request timer to send a new search request with larger budget every second
-	searchRequestTimer = new QTimer(this);
-
 
 	// ******** Signal->Slot connections ************************************************
 
@@ -342,26 +318,11 @@ MessageSender::MessageSender()
 	// User presses return after entering keyword(s) to search for files
 	connect(fileSearchLine, SIGNAL(returnPressed()), this, SLOT(sendInitialSearchRequest()));
 
-	// User double clicks a peer to start a private message
-	connect(privateMsgList, SIGNAL(itemActivated(QListWidgetItem *)), this, SLOT(setupPrivateMessage(QListWidgetItem *)));
-
 	// User double clicks a file to start a download
 	connect(fileSearchResultsList, SIGNAL(itemActivated(QListWidgetItem *)), this, SLOT(startFileDownload(QListWidgetItem *)));
 
 	// node receives a message
 	connect(socket, SIGNAL(readyRead()), this, SLOT(onReceive()));
-
-	// Route rumor message timer timeout
-	connect(routeRumorTimer, SIGNAL(timeout()), this, SLOT(sendRouteRumorTimeout()));
-
-	// Rumor Mongering timer timeout
-	connect(timer, SIGNAL(timeout()), this, SLOT(sendTimeoutStatus()));
-
-	// Resend search request timer timemout
-	connect(searchRequestTimer, SIGNAL(timeout()), this, SLOT(updateSearchRequestBudget()));
-
-	// User sends a private message
-	connect(privateChatEditor, SIGNAL(returnPressed()), this, SLOT(sendPrivateMessage()));
 
 	// User clicks the share file button
 	connect(shareFileButton, SIGNAL(clicked()), this, SLOT(openFileDialog()));
@@ -369,24 +330,6 @@ MessageSender::MessageSender()
 	// User selects a file(s) to share
 	connect(fileDialog, SIGNAL(filesSelected(const QStringList &)), this, SLOT(getFileMetadata(const QStringList &)));
 	// ********************************************************************************
-
-
-
-	timer->start(10000);
-
-	// Send route rumor message to peers
-	sendRouteRumorTimeout();
-}
-
-
-int MessageSender::getChatCounter() {
-	return chatCounter;
-}
-
-
-// Increment the number of chats sent by Peerster node X
-void MessageSender::updateChatCounter() {
-	chatCounter += 1;
 }
 
 
@@ -394,32 +337,13 @@ QString MessageSender::getOriginID() {
 	return originID;
 }
 
-QVariantMap MessageSender::getWantMap() {
-	return statusMap["Want"].toMap();
-}
-
-
-// Update the status of the node when a new msg is received
-void MessageSender::updateStatusMap(QString origin, int seqNo) {
-
-	qDebug() << "Updating Status Map with " << origin << " " << QString::number(seqNo) << endl;
-	QVariantMap wantMap = getWantMap();
-	if(!wantMap.contains(origin)) {
-		qDebug() << "inserting " << origin << endl;
-		if(seqNo == 1) {
-			wantMap.insert(origin, 2);
-		}
-		else wantMap.insert(origin, 1);
+bool MessageSender::createFingerTable() {
+	fingerTable = new QHash<QByteArray, QList<QByteArray>>();
+	QByteArray start = 1;
+	for (QByteArray i = 0; i < 5; i++) {
+		fingerTable->insert((nodeID + start) % 5, QList<QByteArray>() << (nodeID + start) % 5 << (nodeID + start * 2) % 2 << -1);
 	}
-	else {
-		int currentSeqNo = wantMap[origin].toInt();
-		if(seqNo == currentSeqNo) {
-			wantMap[origin] = wantMap[origin].toInt() + 1;
-		}
-	}
-	statusMap["Want"] = wantMap;
 }
-
 
 // Slot method for when return is pressed
 void MessageSender::gotReturnPressed()
@@ -432,19 +356,15 @@ void MessageSender::gotReturnPressed()
 	QVariantMap map;
 	map.insert("ChatText", str);
 	map.insert("Origin", originID);
-	map.insert("SeqNo", chatCounter);
 	QByteArray serializedMsg = getSerialized(map);
 
 	// Add our own message to our msgMap & update status map
-	QString key = originID + QString::number(chatCounter);
 	msgMap.insert(key, map);
 	chat->getTextView()->append(str);
-	updateStatusMap(originID, chatCounter);
 
 	// Send message to all peers
 	sendToPeers(serializedMsg);
 
-	updateChatCounter();
 	textline->clear();
 }
 
@@ -489,11 +409,8 @@ void MessageSender::onReceive()
 		addPeer(peerKey);
 	}
 
-	bool isDirectRoute = true;
 	// If message contains LastIP/LastPort then add node to peer list
 	if(receivedMap.contains("LastIP") && receivedMap.contains("LastPort")) {
-		isDirectRoute = false;
-		qDebug() << "LastIP and LastPort Found. Add new peer!!!" << endl;
 		
 		quint32 addressNum = receivedMap.value("LastIP").toUInt();
 		QHostAddress hostAddress = QHostAddress(addressNum);
@@ -507,10 +424,6 @@ void MessageSender::onReceive()
 		addPeer(peerKey);
 	}
 
-	// Status Message
-	if(receivedMap.contains("Want")) {
-		handleStatusMessage(receivedMap, senderAddress, senderPort);
-	}
 	// Private Msg or Block Msg
 	else if(receivedMap.contains("Dest")) {
 
@@ -518,11 +431,6 @@ void MessageSender::onReceive()
 		QString dest = receivedMap["Dest"].toString();
 		QString origin = receivedMap["Origin"].toString();
 		QString senderOrigin = origin;
-		quint32 hopsLeft = receivedMap["HopLimit"].toInt();
-
-		// decrement hopLimit
-		hopsLeft--;
-
 		// Check if the message was sent here
 		if(dest == originID) {
 			// Block Requests
@@ -539,33 +447,24 @@ void MessageSender::onReceive()
 				handleSearchReplyMessage(receivedMap);
 
 			}
-			// Private Msg
-			else {
-				qDebug() << "Received my private message from " << origin << endl;
-				QString msg = receivedMap["ChatText"].toString();
-				chat->getTextView()->append(msg);
-			}
 		}
 		// Forward the message along to the next hop if noForward flag is not set and hops remain
-		else if(routeTable.contains(dest) && hopsLeft > 0 && !noForward) {
-			qDebug() << "Private message not for me. Hops Remaining: " << QString::number(hopLimit) << endl;
+		else if(routeTable.contains(dest)) {
 			QPair<QHostAddress, quint16> routingInfo = routeTable.value(dest);
-			receivedMap["HopLimit"] = hopsLeft;
 			QByteArray byteArrayToSender= getSerialized(receivedMap);
 			socket->writeDatagram(byteArrayToSender, routingInfo.first, routingInfo.second);
 		}
 	}
-	// Search Request
+	// Change this for searching in chord
 	else if(receivedMap.contains("Search")) {
 		qDebug() << "Got search request" << endl;
 		QString senderOrigin = receivedMap["Origin"].toString();
 		QString searchStr = receivedMap["Search"].toString();
 		localFileSearch(searchStr, senderOrigin);
-		budgetSearchRequest(receivedMap);
 	}
 	// Rumor Message
 	else {
-		handleRumorMessage(receivedMap, senderAddress, senderPort, isDirectRoute);
+		handleRumorMessage(receivedMap, senderAddress, senderPort);
 	}
 }
 
@@ -595,7 +494,6 @@ void MessageSender::localFileSearch(QString searchStr, QString dest) {
 		QVariantMap searchReplyMap;
 		searchReplyMap.insert("Dest", dest);
 		searchReplyMap.insert("Origin", originID);
-		searchReplyMap.insert("HopLimit", hopLimit);
 		searchReplyMap.insert("SearchReply", searchStr);
 		searchReplyMap.insert("MatchNames", fileNameLst);
 		searchReplyMap.insert("MatchIDs", fileIdList);
@@ -607,81 +505,8 @@ void MessageSender::localFileSearch(QString searchStr, QString dest) {
 }
 
 
-// Protocol for when a status message is received 
-void MessageSender::handleStatusMessage(QVariantMap receivedMap, QHostAddress *senderAddress, quint16 *senderPort) {
-	bool sendStatus = false;
-	QVector<QVariantMap> sendLst;
-
-	qDebug() << "is STATUS " << endl;
-	//compare statuses
-	QVariantMap senderStatus = receivedMap["Want"].toMap();
-	QVariantMap myStatus = statusMap["Want"].toMap();
-	for(auto k: myStatus.keys()) {
-		QString origin = k;
-		qDebug() << "Comparing msgs from " << origin << endl;
-		// If origin does not exist at sender's node, send everything we have for origin
-		if(!senderStatus.contains(origin)) {
-			qDebug() << "Sender doesnt have " << origin << " so sending it now" << endl;
-			for(int i=1; i < myStatus[origin].toInt(); i++) {
-				QString key = origin + QString::number(i);
-				QVariantMap msgToSend = msgMap[key].toMap();
-				sendLst.push_back(msgToSend);
-			}
-		}
-		else {
-			int numMsgSender = senderStatus[origin].toInt();
-			int numMsgLocal = myStatus[origin].toInt();
-
-			// Send everything from origin the sender doesn't already have
-			if(numMsgSender < numMsgLocal) {
-				qDebug() << "Sender has some msgs but not all from " << origin << endl;
-				for(int i=numMsgSender; i < numMsgLocal; i++) {
-					QString key = origin + QString::number(i);
-					qDebug() << "KEY HERE IS " << key << endl;
-					QVariantMap msgToSend = msgMap[key].toMap();
-					qDebug() << msgToSend << endl;
-
-					// if noForward flag is set then only send route rumors (messages without chat text)
-					if(!noForward || !msgToSend.contains("ChatText")) {
-						sendLst.push_back(msgToSend);
-					}
-				}
-			}
-			// Send a status message to get missing messages from sender
-			else if(numMsgLocal < numMsgSender) {
-				sendStatus = true;
-			}
-			else {
-				qDebug() << "Everything same do nothing" << endl;
-			}
-
-		}
-	}
-
-	// Check sender's status map. If we are missing msgs, send status
-	for(auto k: senderStatus.keys()) {
-		if(!myStatus.contains(k)) {
-			sendStatus = true;
-		}
-	}
-
-	// Send all messages in the send list
-	for(int i=0; i<sendLst.size(); i++) {
-		qDebug() << "SENDING! " << sendLst[i] << endl;
-		QByteArray byteArrayToSender = getSerialized(sendLst[i]);
-		socket->writeDatagram(byteArrayToSender, *senderAddress, *senderPort);
-	}
-
-	// Send our status
-	if(sendStatus) {
-		QByteArray byteArrayToSender= getSerialized(statusMap);
-		socket->writeDatagram(byteArrayToSender, *senderAddress, *senderPort);
-	}
-}
-
-
 // Protocol for handling received rumor message
-void MessageSender::handleRumorMessage(QVariantMap receivedMap, QHostAddress *senderAddress, quint16 *senderPort, bool isDirectRoute) {
+void MessageSender::handleRumorMessage(QVariantMap receivedMap, QHostAddress *senderAddress, quint16 *senderPort) {
 	QString origin = receivedMap["Origin"].toString();
 	qDebug() << "is RUMOR from " << origin << endl;
 	int seqNo = receivedMap["SeqNo"].toInt();
@@ -701,9 +526,6 @@ void MessageSender::handleRumorMessage(QVariantMap receivedMap, QHostAddress *se
 		// Add msg to msgMap
 		msgMap.insert(key, receivedMap);
 
-		// Update Status Map
-		updateStatusMap(origin, seqNo);
-
 		// If it is a chat message then display the text
 		if(receivedMap.contains("ChatText")) {
 
@@ -716,9 +538,6 @@ void MessageSender::handleRumorMessage(QVariantMap receivedMap, QHostAddress *se
 			qDebug() << "Is a route rumor message " << endl;
 		}
 
-		// Update routing table
-		updateRoutingTable(origin, *senderAddress, *senderPort);
-
 		// Start mongering if noForward flag is NOT set
 		QByteArray byteArrayToSender;
 		if(!noForward) {
@@ -728,18 +547,6 @@ void MessageSender::handleRumorMessage(QVariantMap receivedMap, QHostAddress *se
 			byteArrayToSender = getSerialized(receivedMap);
 			socket->writeDatagram(byteArrayToSender, address, tempPort);
 		}
-
-		// Send status back to sender
-		qDebug() << "Sending status to " << *senderAddress << *senderPort << endl;
-		byteArrayToSender = getSerialized(statusMap);
-		socket->writeDatagram(byteArrayToSender, *senderAddress, *senderPort);
-	}
-	else {
-		// update routing table is this is a direct route
-		if(isDirectRoute) {
-			updateRoutingTable(origin, *senderAddress, *senderPort);
-		}
-		qDebug() << "Already Have this message" << endl;
 	}
 }
 
@@ -759,16 +566,6 @@ void MessageSender::handleBlockReplyMessage(QVariantMap receivedMap, QString sen
 		qDebug() << "GOOD MESSAGE" << endl;
 		if(fileReceiving.isEmpty()) {
 			qDebug() << "is a metafile" << endl;
-
-			// Support for large files. numInception represents how many nested metadata files there are
-			if(receivedMap.contains("inception")) {
-				this->numInception = receivedMap["inception"].toInt();
-				qDebug() << "IS INCEPTION!! " << QString::number(this->numInception) << " Levels" << endl;
-			}
-			else {
-				this->numInception = 0;
-			}
-
 			fileMetadata.insert(hashVal, receivedData);
 			fileReceiving = receivedData;
 			QVariantMap blockRequest = createBlockRequest(senderOrigin, originID);
@@ -902,7 +699,6 @@ QVariantMap MessageSender::createBlockReply(QString dest, QString origin, QByteA
 	QVariantMap blockReplyMap;
 	blockReplyMap.insert("Dest", dest);
 	blockReplyMap.insert("Origin", origin);
-	blockReplyMap.insert("HopLimit", hopLimit);
 	blockReplyMap.insert("BlockReply", dataHash);
 	blockReplyMap.insert("Data", data);
 
@@ -923,12 +719,11 @@ QVariantMap MessageSender::createBlockRequest(QString dest, QString origin) {
 }
 
 
-// Create search request using this->currentSearch as the keyword string to send to peers
+// Create chord search message
 QVariantMap MessageSender::createSearchRequest() {
 	QVariantMap searchMap;
 	searchMap.insert("Origin", this->originID);
 	searchMap.insert("Search", this->currentSearch);
-	searchMap.insert("Budget", this->budget);
 	return searchMap;
 }
 
@@ -952,48 +747,6 @@ Peer MessageSender::getNeighbor() {
 	int randVal = qrand()%size;
 	qDebug() << "My Neighbor is "<< peerLst[randVal].getHostName()<< " " << peerLst[randVal].getPort() << endl;
 	return peerLst[randVal];
-}
-
-
-// Slot for when anti-entropy timer expires
-void MessageSender::sendTimeoutStatus() {
-	qDebug() << "TIMEOUT!!!" <<endl;
-	Peer neighbor = getNeighbor();
-	int port = neighbor.getPort();
-	QHostAddress address = neighbor.getAddress();
-	qDebug() << "Sending timeout msg to " << address.toString() << " " << QString::number(port) <<endl;
-	
-	QByteArray byteArrayToSender= getSerialized(statusMap);
-	socket->writeDatagram(byteArrayToSender, address, port);
-	timer->start(10000);
-}
-
-
-// Slot for when route rumor timer expires
-void MessageSender::sendRouteRumorTimeout() {
-	qDebug() << "Route Timeout" <<endl;
-
-	QVariantMap map;
-	map.insert("Origin", originID);
-	map.insert("SeqNo", chatCounter);
-
-	// Add our own message to our msgMap & update status map
-	QString key = originID + QString::number(chatCounter);
-	msgMap.insert(key, map);
-	updateStatusMap(originID, chatCounter);
-
-	QByteArray serializedMsg = getSerialized(map);
-
-	int numPeers = peerLst.size();
-
-	qDebug() << QString::number(numPeers) <<endl;
-	for (int i = 0; i < numPeers; i++) {
-		Peer tempPeer = peerLst[i];
-		qDebug() << "Sending route rumor to port " << tempPeer.getPort() <<endl;
-		socket->writeDatagram(serializedMsg, tempPeer.getAddress(), tempPeer.getPort());
-	}
-	updateChatCounter();
-	routeRumorTimer->start(60000);
 }
 
 
@@ -1096,108 +849,6 @@ void MessageSender::peerLookup(QHostInfo host) {
 }
 
 
-void MessageSender::updateRoutingTable(QString origin, QHostAddress address, quint16 port) {
-	qDebug() << "Routing Table Insert: << <" << origin << ", <" << address.toString() << ", " << QString::number(port) << ">>" << endl;
-
-	// Create Address, Port pair
-	QPair<QHostAddress, quint16> pair;
-	pair.first = address;
-	pair.second = port;
-
-	// If this is a new node, add it to our private msg list
-	if(!routeTable.contains(origin)) {
-		chat->getPrivateMsgList()->addItem(origin);
-	}
-
-	// add origin, pair to the route table (insert replaces old val if key already exists in table)
-	routeTable.insert(origin, pair);
-}
-
-
-void MessageSender::setupPrivateMessage(QListWidgetItem *listItem) {
-	qDebug() << "PRIVATE MESSAGE TO " << listItem->text() << endl;
-	privateChat->setDest(listItem->text());
-	privateChat->setLabel(listItem->text());
-	privateChat->show();
-	privateChat->activateWindow();
-}
-
-
-void MessageSender::sendInitialSearchRequest() {
-	// Reset budget to default value & searchResultsMap to empty map
-	this->budget = 2;
-	searchResultsMap.clear();
-	chat->getFileSearchResultsList()->clear();
-
-	MultiLineEdit *fileSearchLine = chat->getFileSearchLine();
-	QString searchStr = fileSearchLine->toPlainText();
-	this->currentSearch = searchStr;
- 	fileSearchLine->clear();
-
- 	qDebug() << "SEARCHING FOR " << searchStr << endl;
-
- 	QVariantMap searchMap = createSearchRequest();
- 	budgetSearchRequest(searchMap);
-
- 	this->searchRequestTimer->start(1000);
-}
-
-
-void MessageSender::budgetSearchRequest(QVariantMap searchMap) {
-	
-	quint32 currentBudget = searchMap["Budget"].toInt() - 1;
-	if(currentBudget == 0) return;
-
-	int numPeers = peerLst.size();
-	int baseBudget = currentBudget/numPeers;
-	int numPeersWithBigBudget = currentBudget % numPeers;
-
-	QSet<QString> peersVisited;
-
-	// Send randomly to numPeersWithBigBudget the search request using baseBudget + 1 
-	searchMap["Budget"] = baseBudget+1;
-	for(int i=0; i < numPeersWithBigBudget; i++) {
-		Peer curPeer = getNeighbor();
-		QString peerKey = curPeer.getAddress().toString() + ":" + QString::number(curPeer.getPort());
-		if(!peersVisited.contains(peerKey)) {
-			peersVisited.insert(peerKey);
-			qDebug() << "Sending search request to " << peerKey << endl;
-			socket->writeDatagram(getSerialized(searchMap), curPeer.getAddress(), curPeer.getPort());
-		}
-	}
-	// If currentBudget > numPeers Send to all remaining peers with a budget of baseBudget
-	searchMap["Budget"] = baseBudget;
-	if(baseBudget > 0) {
-		for(int i=0; i < numPeers; i++) {
-			Peer curPeer = peerLst[i];
-			QString peerKey = curPeer.getAddress().toString() + ":" + QString::number(curPeer.getPort());
-			if(!peersVisited.contains(peerKey)) {
-				qDebug() << "Sending search request to " << peerKey << endl;
-				socket->writeDatagram(getSerialized(searchMap), curPeer.getAddress(), curPeer.getPort());
-			}
-		}
-	}
-}
-
-
-void MessageSender::updateSearchRequestBudget() {
-	QListWidget *fileSearchResultsList = this->chat->getFileSearchResultsList();
-
-	// Resend below maxBudget and search results are below maxResults
-	if(this->budget * 2 <= maxBudget && fileSearchResultsList->count() <= this->maxResults) {
-
-		this->budget *= 2;
-		qDebug() << "Sending Timeout Search Request with Budget = " << QString::number(this->budget) << endl;
-
-		QVariantMap searchMap = createSearchRequest();
-		budgetSearchRequest(searchMap);
-
-		// Reset searchRequestTimer
-		this->searchRequestTimer->start(1000);
-	}
-}
-
-
 void MessageSender::startFileDownload(QListWidgetItem *listItem) {
 	QString fileName = listItem->text();
 	qDebug() << "Downloading File " << fileName << endl;
@@ -1213,38 +864,7 @@ void MessageSender::startFileDownload(QListWidgetItem *listItem) {
 
 void MessageSender::openFileDialog() {
 	fileDialog->show();
-	privateChat->activateWindow();
-}
-
-
-QVariantMap MessageSender::createPrivateMessage() {
-	QVariantMap map;
-	QString message = privateChat->getTextLine()->toPlainText();
-	QString dest = privateChat->getDest();
-
-	map.insert("ChatText", message);
-	map.insert("Dest", dest);
-	map.insert("Origin", originID);
-	map.insert("HopLimit", hopLimit);
-
-	return map;
-}
-
-
-void MessageSender::sendPrivateMessage() {
-	QVariantMap map = createPrivateMessage();
-
-	QString dest = privateChat->getDest();
-
-	if(routeTable.contains(dest)) {
-		QPair<QHostAddress, quint16> routingInfo = routeTable.value(dest);
-		QByteArray byteArrayToSender= getSerialized(map);
-		socket->writeDatagram(byteArrayToSender, routingInfo.first, routingInfo.second);
-	}
-
-	// Clear the text line
-	MultiLineEdit *textline = privateChat->getTextLine();
-	textline->clear();
+	fileDialog->activateWindow();
 }
 
 
@@ -1275,16 +895,10 @@ void MessageSender::getFileMetadata(const QStringList &fileList) {
 	        continue;
 	    }
 	    QDataStream in(&file);
-	    QByteArray temp;	
-	    int *metafileInception = new int(-1);
 	    int bytesRead;
 	    int totalBytes = 0;
 	    char *dataStore = (char *)calloc(8000, 1);
 
-	    QString tester = "00be1e7c339a29f8bcd5cf1c11e0172687cfd0f4";
-	    QString tester2 = "00677edbeef85aadd54ba4d89bb15d6eb78592af";
-	    QByteArray wtf = QByteArray::fromHex(tester.toLatin1());
-	    QByteArray wtf2 = QByteArray::fromHex(tester2.toLatin1());
 	    do { 
 	    	bytesRead = in.readRawData(dataStore, 8000);
 	    	QByteArray hashVal = QCA::Hash("sha1").hash(dataStore).toByteArray();
@@ -1308,113 +922,16 @@ void MessageSender::getFileMetadata(const QStringList &fileList) {
 		}
 		while(bytesRead == 8000);
 
-		
-		QByteArray finalMetafile = recurseMetadata(output, metafileInception);
-
-		QByteArray hashedMetafile = QCA::Hash("sha1").hash(finalMetafile).toByteArray();
+		QByteArray hashedMetafile = QCA::Hash("sha1").hash(output).toByteArray();
 		qDebug() << hashedMetafile.toHex() << endl;
 
 		// Insert the metadata into the fileMetadata table
 		QVariantMap metadataMap;
 		metadataMap.insert("fileName", fileList[i]);
 		metadataMap.insert("fileSize", totalBytes);
-		metadataMap.insert("metaFile", finalMetafile);
-		metadataMap.insert("inception", *metafileInception);
+		metadataMap.insert("metaFile", output);
 		fileMetadata.insert(hashedMetafile, metadataMap);	
 	}
-}
-
-QByteArray MessageSender::recurseMetadata(QByteArray data, int *metafileInception) {
-	(*metafileInception)++;
-	if(data.size() <= 8000) {
-		return data;
-	}
-	else {
-		qDebug() << "Metafile too big!!" << endl;
-		qDebug() << "Output is " << endl << data.toHex() << endl << endl;
-		QCA::Hash shaHash("sha1");
-		QByteArray output;
-		QDataStream in(data);
-
-	    int bytesRead;
-	    
-
-	    do {
-	    	QByteArray tempData = data.mid(0, 8000);
-	    	QByteArray hashVal = QCA::Hash("sha1").hash(tempData).toByteArray();
-
-	    	// add hash and block to the fileHash table
-	    	if(fileHash.contains(hashVal)) {
-	    		QVariantList hashValList;
-	    		hashValList.append(fileHash[hashVal].toByteArray());
-	    		hashValList.append(tempData);
-	    		fileHash[hashVal] = hashValList;
-	    	}
-	    	else {
-	    		fileHash[hashVal] = tempData;
-	    	}
-	    	qDebug() << "Hashing " << hashVal.toHex() << endl << "TO" << fileHash[hashVal].toByteArray().toHex() << endl;
-
-	    	// Append to hash metafile
-	    	data.remove(0, 8000);
- 	    	output.append(hashVal);
-		}
-		while(data.size() > 0);
-
-		// Recurse in case new metafile is still too large
-		return recurseMetadata(output, metafileInception);
-	}
-}
-
-
-// *************** DELETE THIS ***************
-void MessageSender::addInitialPrivateMsgPeers() {
-	qDebug() << "ADDING INITIAL PM PEERS" <<endl;
-	QHash<QString, QPair<QHostAddress, quint16>>::iterator i;
-	for(i = routeTable.begin(); i != routeTable.end(); i++) {
-		qDebug() << "HERE" << endl;
-		qDebug() << i.key();
-	}
-}
-// *********************************************
-
-
-PrivateChat::PrivateChat(QString dest) {
-	this->dest = dest;
-
-	textline = new MultiLineEdit();
-	textline->setFocus();
-	textline->setMaximumHeight(50);
-
-	QString label = "Your private message to " + dest;
-
-	privateMessageLabel = new QLabel();
-	privateMessageLabel->setText(label);
-
-	QVBoxLayout *mainLayout = new QVBoxLayout();
-	mainLayout->addWidget(privateMessageLabel);
-	mainLayout->addWidget(textline);
-	setLayout(mainLayout);
-}
-
-
-MultiLineEdit* PrivateChat::getTextLine() {
-	return textline;
-}
-
-
-QString PrivateChat::getDest() {
-	return dest;
-}
-
-
-void PrivateChat::setDest(QString dest) {
-	this->dest = dest;
-}
-
-
-void PrivateChat::setLabel(QString label) {
-	this->privateMessageLabel->setText("Your private message to " + label);
 }
 
 

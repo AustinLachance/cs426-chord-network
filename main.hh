@@ -66,7 +66,7 @@ public:
 	MultiLineEdit *getAddPeersLine();
 	MultiLineEdit *getDownloadFileLine();
 	MultiLineEdit *getFileSearchLine();
-	QListWidget *getPrivateMsgList();
+	MultiLineEdit *getJoinChordLine();
 	QListWidget *getFileSearchResultsList();
 	QPushButton *getShareFileButton();
 
@@ -76,27 +76,9 @@ private:
 	MultiLineEdit *addPeersLine;
 	MultiLineEdit *downloadFileLine;
 	MultiLineEdit *fileSearchLine;
-	QListWidget *privateMsgList;
+	MultiLineEdit *joinChordLine;
 	QListWidget *fileSearchResultsList;
 	QPushButton *shareFileButton;
-};
-
-
-class PrivateChat : public QDialog
-{
-	Q_OBJECT
-
-public:
-	PrivateChat(QString dest);
-	MultiLineEdit *getTextLine();
-	QString getDest();
-	void setDest(QString dest);
-	void setLabel(QString label);
-
-private:
-	MultiLineEdit *textline;
-	QString dest;
-	QLabel *privateMessageLabel;
 };
 
 
@@ -150,31 +132,23 @@ public:
 	MessageSender();
 
 	QByteArray getSerialized(QVariantMap map);
-	int getChatCounter();
-	void updateChatCounter();
 	QString getOriginID();
-	QVariantMap getWantMap();
-	void updateStatusMap(QString origin, int seqNo);
 	int getNeighbor(int val);
 	Peer getNeighbor();
 	void addPeer(QString input);
-	void updateRoutingTable(QString origin, QHostAddress address, quint16 port);
-	void addInitialPrivateMsgPeers();
-	QVariantMap createPrivateMessage();
 	QVariantMap createBlockReply(QString dest, QString origin, QByteArray dataHash, QByteArray data);
 	QVariantMap createBlockRequest(QString dest, QString origin);
 	QVariantMap createBlockRequest(QString dest, QString origin, QByteArray dataHash);
 	QVariantMap createSearchRequest();
 	void sendToPeers(QByteArray data);
 	void handleStatusMessage(QVariantMap receivedMap, QHostAddress *senderAddress, quint16 *senderPort);
-	void handleRumorMessage(QVariantMap receivedMap, QHostAddress *senderAddress, quint16 *senderPort, bool isDirectRoute);
+	void handleRumorMessage(QVariantMap receivedMap, QHostAddress *senderAddress, quint16 *senderPort);
 	void handleBlockReplyMessage(QVariantMap receivedMap, QString senderOrigin);
 	void handleBlockRequestMessage(QVariantMap receivedMap, QString senderOrigin);
 	void handleSearchReplyMessage(QVariantMap receivedMap);
-	void budgetSearchRequest(QVariantMap searchMap);
 	void localFileSearch(QString searchStr, QString dest);
 	void sendPointToPoint(QVariantMap map);
-	QByteArray recurseMetadata(QByteArray data, int *metafileInception);
+	bool createFingerTable();
 
 
 public slots:
@@ -184,31 +158,21 @@ public slots:
 	void sendRouteRumorTimeout();
 	void peerLookup(QHostInfo host);
 	void addGuiPeer();
-	void setupPrivateMessage(QListWidgetItem *listItem);
 	void startFileDownload(QListWidgetItem * listItem);
-	void sendPrivateMessage();
 	void openFileDialog();
 	void getFileMetadata(const QStringList &fileList);
 	void downloadFile();
 	void sendInitialSearchRequest();
-	void updateSearchRequestBudget();
-
 
 private:
 	ChatDialog *chat;
 	NetSocket *socket;
-	PrivateChat *privateChat;
 	QFileDialog *fileDialog;
 	QString originID;
-	int chatCounter;
-	int hopLimit;
-	bool noForward;
-	QVariantMap statusMap;
+	QByteArray nodeID;
 	QVariantMap msgMap;
 	QVariantMap fileHash;
 	QVariantMap fileMetadata;
-	QTimer *timer;
-	QTimer *routeRumorTimer;
 	QTimer *searchRequestTimer;
 	QVector<Peer> peerLst;
 	QVariantMap portMap;
@@ -217,11 +181,10 @@ private:
 	QByteArray fileReceiving;
 	QByteArray fileBuilder;
 	QString currentSearch;
-	quint32 budget;
-	quint32 maxBudget;
-	quint32 maxResults;
-	quint32 numInception;
 	QVariantMap searchResultsMap;
+	
+	QHash<QByteArray, QList<QByteArray>>* fingerTable;
+	QHash<QByteArray, QList<QByteArray>>* fileTable;
 };
 
 #endif // PEERSTER_MAIN_HH

@@ -288,7 +288,7 @@ MessageSender::MessageSender()
 	QByteArray nodeHash = QCA::Hash("sha1").hash(originID.toLatin1()).toByteArray();
 	QDataStream in(nodeHash.right(2));
 	in.setByteOrder(QDataStream::BigEndian);
-	quint32 result; 
+	quint16 result; 
 	in >> result;
 	qDebug() << "Hex right 2 bytes " << nodeHash.right(2).toHex();
 	qDebug() << "result: " << QString::number(result);

@@ -288,7 +288,7 @@ MessageSender::MessageSender()
 	QByteArray hashedShit = QCA::Hash("sha1").hash(originID.toLatin1()).toByteArray();
 	bool FUCK = true;
 	qDebug() << "tryna hash my originID" << endl;
-	qDebug() << hashedShit << endl;
+	qDebug() << hashedShit.toHex() << endl;
 	qDebug() << hashedShit.right(2).toHex() << endl;
 	
 	QDataStream in(hashedShit.right(2)); //< Attach a read-only stream to it

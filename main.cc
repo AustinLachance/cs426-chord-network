@@ -387,14 +387,14 @@ void MessageSender::stabilizeNode() {
 
 // Got our successor's predecessor. Continue stabilization
 void MessageSender::stabilizePredecessor(QVariantMap map) {
-	quint32 tempNodeID = map["nodeID"].toInt();
-	quint32 succID = this->successor.first;
+	int tempNodeID = map["nodeID"].toInt();
+	int succID = this->successor.first;
 	
 	QPair<QHostAddress, quint16> tempNodeInfo;
 	tempNodeInfo.first = QHostAddress(map["nodeAddress"].toInt());
 	tempNodeInfo.second = map["nodePort"].toInt();
 	
-	QPair<quint32, QPair<QHostAddress, quint16>> tempNode(tempNodeID, tempNodeInfo);
+	QPair<int, QPair<QHostAddress, quint16>> tempNode(tempNodeID, tempNodeInfo);
 	
 	// Node has been inserted between us and our old successor. Make this node new successor
 	if(tempNodeID > this->nodeID && tempNodeID < succID) {
@@ -520,7 +520,7 @@ void MessageSender::onReceive()
 			receivedMap.remove("findSuccessor");
 			receivedMap.insert("findClosestPredecessor", -1);
 			QByteArray findClosestPredMsg = getSerialized(receivedMap);
-			socket->writeDatagram(findClosestPredMsg, QHostAddress(successor.second.first.toInt()), successor.second.second);
+			socket->writeDatagram(findClosestPredMsg, successor.second.first, successor.second.second);
 			return;
 		}
 		
@@ -551,7 +551,7 @@ void MessageSender::onReceive()
 		}
 		//have our successor find its closest predecessor, then the closest predecessor will find successor
 		receivedMap.insert("findClosestPredecessor", -1);
-		receivedMap.insert("newNodeAddress", *senderAddress);
+		receivedMap.insert("newNodeAddress", senderAddress->toIPv4Address());
 		receivedMap.insert("newNodePort", *senderPort);
 		QByteArray findClosestPredMsg = getSerialized(receivedMap);
 		socket->writeDatagram(findClosestPredMsg, successor.second.first, successor.second.second);
@@ -619,9 +619,9 @@ void MessageSender::onReceive()
 	// Node thinks it might be our predecessor. Check if this is true and stabilize accordingly
 	// Last step in successor/predecessor stabilization. Reset timer at end
 	else if(receivedMap.contains("predecessorTest")) {
-		quint32 tempNodeID = receivedMap["nodeID"].toInt();
+		int tempNodeID = receivedMap["nodeID"].toInt();
 		QPair<QHostAddress, quint16> tempNodeInfo(*senderAddress, *senderPort);
-		QPair<quint32, QPair<QHostAddress, quint16>> tempNode(tempNodeID, tempNodeInfo);
+		QPair<int, QPair<QHostAddress, quint16>> tempNode(tempNodeID, tempNodeInfo);
 		
 		// If predecessor doesn't exist or tempNode falls btw old predecessor and us then update
 		if((predecessor.first == -1) || (tempNodeID > this->predecessor.first && tempNodeID < this->nodeID)) {

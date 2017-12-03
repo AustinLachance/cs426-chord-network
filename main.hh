@@ -169,7 +169,7 @@ private:
 	NetSocket *socket;
 	QFileDialog *fileDialog;
 	QString originID;
-	QByteArray nodeID;
+	quint32 nodeID;
 	QVariantMap msgMap;
 	QVariantMap fileHash;
 	QVariantMap fileMetadata;

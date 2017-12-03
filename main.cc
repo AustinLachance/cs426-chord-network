@@ -282,9 +282,10 @@ MessageSender::MessageSender()
 	originID = hostName + idVal;
 	QCA::Hash shaHash("sha1");
 	QByteArray dummyByte(originID.toLatin1());
-	nodeID = QCA::Hash("sha1").hash(dummyByte).toByteArray() % 5;
+	nodeID = QCA::Hash("sha1").hash(dummyByte).toByteArray().toInt() % 5;
 
 	qDebug() << "My OriginID is " << originID << endl;
+	qDebug() << "My nodeID is " << QString::number(nodeID) << endl;
 	
 	//Create a chord fingerTable - id maps to size 3 list (start, end, successor)
 	createFingerTable();
@@ -356,7 +357,7 @@ void MessageSender::gotReturnPressed()
 	QByteArray serializedMsg = getSerialized(map);
 
 	// Add our own message to our msgMap & update status map
-	msgMap.insert(key, map);
+	// msgMap.insert(key, map);
 	chat->getTextView()->append(str);
 
 	// Send message to all peers

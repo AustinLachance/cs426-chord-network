@@ -140,6 +140,7 @@ public:
 	QVariantMap createBlockRequest(QString dest, QString origin);
 	QVariantMap createBlockRequest(QString dest, QString origin, QByteArray dataHash);
 	QVariantMap createSearchRequest();
+	bool findSuccessor(quint32 newNode);
 	void sendToPeers(QByteArray data);
 	void handleStatusMessage(QVariantMap receivedMap, QHostAddress *senderAddress, quint16 *senderPort);
 	void handleRumorMessage(QVariantMap receivedMap, QHostAddress *senderAddress, quint16 *senderPort);
@@ -149,17 +150,24 @@ public:
 	void localFileSearch(QString searchStr, QString dest);
 	void sendPointToPoint(QVariantMap map);
 	bool createFingerTable();
+	void stabilizePredecessor(QVariantMap map);
 
 
 public slots:
 	void gotReturnPressed();
 	void onReceive();
 	void peerLookup(QHostInfo host);
+	void chordLookup(QHostInfo host);
 	void addGuiPeer();
+	void joinGuiPeer();
+	void joinGuiChord();
 	void startFileDownload(QListWidgetItem * listItem);
 	void openFileDialog();
 	void getFileMetadata(const QStringList &fileList);
 	void downloadFile();
+	void stabilizeNode();
+	void checkPredecessor();
+	void deadPredecessor();
 
 private:
 	ChatDialog *chat;
@@ -180,8 +188,15 @@ private:
 	QString currentSearch;
 	QVariantMap searchResultsMap;
 	
+	QPair<quint32, QPair<QHostAddress, quint16>> successor;
+	QPair<quint32, QPair<QHostAddress, quint16>> predecessor;
 	QHash<QByteArray, QList<QByteArray>>* fingerTable;
 	QHash<QByteArray, QList<QByteArray>>* fileTable;
+	
+	QTimer *stabilizeTimer;
+	QTimer *checkPredTimer;
+	QTimer *predResponseTimer;
+
 };
 
 #endif // PEERSTER_MAIN_HH

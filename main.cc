@@ -286,7 +286,7 @@ MessageSender::MessageSender()
 	QByteArray dummyByte(originID.toLatin1());
 	hashObj.update(dummyByte);
 	qDebug() << "tryna hash my originID" << endl;
-	nodeID = hashObj.final().toByteArray().toInt() % 5;
+	nodeID = hashObj.final().toByteArray().toInt() % 32;
 
 	qDebug() << "My OriginID is " << originID << endl;
 	qDebug() << "My nodeID is " << QString::number(nodeID) << endl;
@@ -296,6 +296,15 @@ MessageSender::MessageSender()
 	
 	//Create a chord fileTable - id maps to all the blocks of a file
 	fileTable = new QHash<QByteArray, QList<QByteArray>>();
+	
+	// Create a timer for chord stabilization
+	stabilizeTimer = new QTimer(this);
+	
+	// Timer to check the status of this node's predecessor
+	checkPredTimer = new QTimer(this);
+	
+	// Timer waiting for a response from predecessor
+	predResponseTimer = new QTimer(this);
 
 	// Get references to private members of ChatDialog
 	MultiLineEdit* textline = chat->getTextLine();
@@ -304,6 +313,8 @@ MessageSender::MessageSender()
 	MultiLineEdit* fileSearchLine = chat->getFileSearchLine();
 	QListWidget *fileSearchResultsList = chat->getFileSearchResultsList();
 	QPushButton *shareFileButton = chat->getShareFileButton();
+	successor.first = -1;
+	predecessor.first = -1;
 
 	// ******** Signal->Slot connections ************************************************
 
@@ -312,6 +323,9 @@ MessageSender::MessageSender()
 
 	// User presses return after entering a "host:port" to add a peer
 	connect(addPeersLine, SIGNAL(returnPressed()),this, SLOT(addGuiPeer()));
+	
+	// User presses return after entering a "host:port" to join a peer's chord
+	connect(joinChordLine, SIGNAL(returnPressed()), this, SLOT(joinGuiPeer()));
 
 	// User presses return after entering a "targetNodeID:hexDataHash" to download a file
 	connect(downloadFileLine, SIGNAL(returnPressed()), this, SLOT(downloadFile()));
@@ -327,6 +341,15 @@ MessageSender::MessageSender()
 
 	// User selects a file(s) to share
 	connect(fileDialog, SIGNAL(filesSelected(const QStringList &)), this, SLOT(getFileMetadata(const QStringList &)));
+	
+	// Run chord stabilization protocol
+	connect(stabilizeTimer, SIGNAL(timeout()), this, SLOT(stabilizeNode()));
+	
+	// Check the state of this node's predecessor
+	connect(checkPredTimer, SIGNAL(timeout()), this, SLOT(checkPredecessor()));
+	
+	// Node predecessor did not respond in time. Remove it.
+	connect(predResponseTimer, SIGNAL(timeout()), this, SLOT(deadPredecessor()));
 	// ********************************************************************************
 }
 
@@ -339,7 +362,8 @@ bool MessageSender::createFingerTable() {
 	fingerTable = new QHash<QByteArray, QList<QByteArray>>();
 	int start = 1;
 	for (int i = 0; i < 5; i++) {
-		fingerTable->insert(QByteArray::number((nodeID + start) % 32), QList<QByteArray>() << QByteArray::number((nodeID + start) % 32) << QByteArray::number((nodeID + start * 2) % 32) << QByteArray::number(-1));
+		fingerTable->insert(QByteArray::number((nodeID + start) % 32), QList<QByteArray>() << QByteArray::number((nodeID + start) % 32) 
+		<< QByteArray::number((nodeID + start * 2) % 32) << QByteArray::number(-1)) << QByteArray::number(-1) << QByteArray::number(-1);
 		start *= 2;
 	}
 	for (auto i = fingerTable->begin(); i != fingerTable->end(); i++) {
@@ -347,6 +371,64 @@ bool MessageSender::createFingerTable() {
 	}
 	return true;
 }
+
+
+// Run chord stabilization protocol
+void MessageSender::stabilizeNode() {
+	QPair<QHostAddress, quint16> succInfo = this->successor.second;
+	
+	// Request the predecessor of our successor
+	VariantMap predRequestMap;
+	predRequestMap.insert("predecessorRequest", -1);
+	socket->writeDatagram(getSerialize(predRequestMap), succInfo.first, succInfo.second);
+}
+
+
+// Got our successor's predecessor. Continue stabilization
+void MessageSender::stabilizePredecessor(QVariantMap map) {
+	quint32 tempNodeID = map["nodeID"].toInt();
+	quint32 succID = this->successor.first;
+	
+	QPair<QHostAddress, quint16> tempNodeInfo;
+	tempNodeInfo.first = map["nodeAddress"].toHostAddress();
+	tempNodeInfo.second = map["nodePort"].toInt();
+	
+	QPair<quint32, QPair<QHostAddress, quint16>> tempNode(tempNodeID, tempNodeInfo);
+	
+	// Node has been inserted between us and our old successor. Make this node new successor
+	if(tempNodeID > this->nodeID && tempNodeID < succID) {
+		this->successor = tempNode;
+	}
+}
+
+
+// Check the status of this node's predecessor
+void MessageSender::checkPredecessor() {
+	
+	// If predecessor exists check if it is alive
+	if(predecessor.first != -1) {
+		QPair<QHostAddress, quint16> predInfo = this->predecessor.second;
+
+		QVariantMap checkMap;
+		checkMap.insert("predecessorStatusRequest", -1);
+	
+		socket->writeDatagram(getSerialized(checkMap), predInfo.first, predInfo.second);
+	}
+	
+	// Wait 5 seconds for a response
+	predResponseTimer->start(5000);
+}
+
+
+// No response from predecessor. Assume dead.
+void MessageSender::deadPredecessor() {
+	this->predecessor.first = -1;
+	
+	// Restart timer to check status of predecessor
+	checkPredTimer->start(10000);
+}
+
+
 
 // Slot method for when return is pressed
 void MessageSender::gotReturnPressed()
@@ -411,9 +493,139 @@ void MessageSender::onReceive()
 	if(!peerCheck.contains(peerKey)) {
 		addPeer(peerKey);
 	}
-
+	
+	
+	
+	// If a new node receives its successor details
+	if (receivedMap.contains("nodeJoin") && receivedMap.contains("successorID")) {
+		successor.first = receivedMap["successorID"].toInt();
+		sucessor.second.first = receivedMap["successorAddress"].toHostAddress();
+		successor.second.second = receivedMap["successorPort"].toInt();
+		return;
+	}
+		
+	// If a chord node receives a forwarded message to find a new node's successor
+	else if (receivedMap.contains("nodeJoin") && receivedMap.contains("findSuccessor")) {
+		//call successor with this newChord
+		if (findSuccessor(receivedMap["nodeJoin"].toInt())) {
+			receivedMap.insert("successorID", successor.first);
+			receivedMap.insert("successorAddress", successor.second.first);
+			receivedMap.insert("sucessorPort", successor.second.second);
+			QByteArray newNodeSuccessorMsg = getSerialized(receivedMap);
+			socket->writeDatagram(newNodeSuccessorMsg, receivedMap["newNodeAddress"].toHostAddress(), receivedMap["newNodePort"].toInt());
+			return;
+		}
+		
+	}
+	
+	// If a chord node receives a forwarded message to find its closest predecessor to a new node
+	else if (receivedMap.contains("nodeJoin") && receivedMap.contains("findClosestPredecessor")) {
+		QByteArray closestPredecessor = findClosestPredecessor(receivedMap["nodeJoin"].toInt());
+		// Shouldn't have to check, but its possible that you yourself are the closest predecessor
+		receivedMap.remove("findClosestPredecessor");
+		receivedMap.insert("findSuccessor");
+		QByteArray findSuccessorMsg = getSerialized(receivedMap);
+		socket->writeDatagram(findSuccessorMsg, fingerTable[closestPredecessor][3].toHostAddress(), fingerTable[closestPredecessor][4].toInt());
+		return;
+	}
+	
+	// If message is from a new node joining the chord, first check your own successors.
+	// else change message for your successors to find the new node's successor
+	else if (receivedMap.contains("nodeJoin")) {
+		if (findSuccessor(receivedMap["nodeJoin"].toInt())) {
+			//send our successor to the new node - i.e the sender
+			receivedMap.insert("successorID", successor.first);
+			receivedMap.insert("successorAddress", successor.second.first);
+			receivedMap.insert("sucessorPort", successor.second.second);
+			QByteArray newNodeSuccessorMsg = getSerialized(receivedMap);
+			socket->writeDatagram(newNodeSuccessorMsg, senderAddress, senderPort);
+			return;
+		}
+		//have our successor find its closest predecessor, then the closest predecessor will find successor
+		receivedMap.insert("findClosestPredecessor", -1);
+		receivedMap.insert("newNodeAddress", senderAddress);
+		receivedMap.insert("newNodePort", senderPort);
+		QByteArray findClosestPredMsg = getSerialized(receivedMap);
+		socket->writeDatagram(findCLosestPredMsg, successor.second.first, successor.second.second);
+		return;
+	}
+	
+	// Node is requesting our status. Respond that we're alive
+	else if(receivedMap.contains("predecessorStatusRequest")) {
+		QVariantMap predStatusReply;
+		predStatusReply.insert("predecessorStatusReply", -1);
+		socket->writeDatagram(getSerialized(predStatusReply), *senderAddress, *senderPort);
+	}
+	
+	// Got a reply to predecessor check. Predecessor is still alive
+	else if(receivedMap.contains("predecessorStatusReply")) {
+		
+		// Stop the predResponseTimer since we got a reply
+		this->predResponseTimer->stop();
+		
+		// Restart predCheckTimer
+		this->predCheckTimer->start(10000);
+	}
+	
+	// Received a request for our predecessor. Send pred info back
+	else if(receivedMap.contains("predecessorRequest")) {
+		
+		QVariantMap predReply;
+		
+		// No predecessor exists (Send -1)
+		if(predecessor.first == -1) {
+			predReply.insert("predecessorReply", -1);
+		}
+		// Predecessor exists (Send 1 and routing info)
+		else {
+			quint32 predID = predecessor.first;
+			QPair<QHostAddress, quint16> predInfo = predecessor.second;
+			
+			predReply.insert("predecessorReply", 1);
+			predReply.insert("nodeID", predID);
+			predReply.insert("nodeAddress", predInfo.first);
+			predReply.insert("nodePort", predInfo.second);
+		}
+		
+		socket->writeDatagram(getSerialized(predReply), *senderAddress, *senderPort);
+	}
+	
+	// Received a predecessor reply. Part of stabilization protocol
+	else if(receivedMap.contains("predecessorReply")) {
+		
+		// If Successor has a predecessor run stabilization protocol
+		if(receivedMap["predecessorReply"].toInt() != -1) {
+			stabilizePredecessor(receivedMap);
+		}
+		
+		// Get routing info for successor
+		QPair<QHostAddress, quint16> succInfo = successor.second;
+		
+		// Tell our successor to check if we are its predecessor
+		QVariantMap predCheck;
+		predCheck.insert("predecessorTest", -1);
+		predCheck.insert("nodeID", this->nodeID);
+		socket->writeDatagram(getSerialized(predCheck), succInfo.first, succInfo.second);
+	}
+	
+	// Node thinks it might be our predecessor. Check if this is true and stabilize accordingly
+	// Last step in successor/predecessor stabilization. Reset timer at end
+	else if(receivedMap.contains("predecessorTest")) {
+		quint32 tempNodeID = receivedMap["nodeID"].toInt();
+		QPair<QHostAddress, quint16> tempNodeInfo(*senderAddress, *senderPort);
+		QPair<quint32, QPair<QHostAddress, quint16>> tempNode(tempNodeID, tempNodeInfo);
+		
+		// If predecessor doesn't exist or tempNode falls btw old predecessor and us then update
+		if((predecessor.first == -1) || (tempNodeID > this->predecessor && tempNodeID < this->nodeID)) {
+			this->predecessor = tempNode;
+		}
+		
+		// Stabilization of successor/predecessor complete. Reset timer
+		stabilizeTimer->start(10000);
+	}
+	
 	// If message contains LastIP/LastPort then add node to peer list
-	if(receivedMap.contains("LastIP") && receivedMap.contains("LastPort")) {
+	else if(receivedMap.contains("LastIP") && receivedMap.contains("LastPort")) {
 		
 		quint32 addressNum = receivedMap.value("LastIP").toUInt();
 		QHostAddress hostAddress = QHostAddress(addressNum);
@@ -722,6 +934,31 @@ QVariantMap MessageSender::createBlockRequest(QString dest, QString origin, QByt
 	return blockRequestMap;
 }
 
+// Find the successor for the given ID
+bool MessageSender::findSuccessor(quint32 newNode) {
+	// The node's successor is this current node's successor
+	if ((newNode > nodeID && newNode < successor.first) || (nodeID < newNode && newNode > successor.first) 
+	|| (nodeID > newNode && newNode < successor.first)
+	(newNode < nodeID && newNode < successor.first)) {
+		return true;
+	}
+	return false;
+}
+
+QByteArray MessageSender::findClosestPredecessor(quint32 newNode) {
+	int i = 16;
+	while (i >= 1) {
+		QByteArray fingerKey = QByteArray::((nodeID + i) % 32);
+		quint32 successorID = fingerTable[fingerKey][2].toInt();
+		if ((nodeID < successorID && successorID < newNode) || (nodeID < successorID && successorID > newNode)
+		|| (nodeID > successorID && successorID < newNode)) {
+			fingerKey
+		}	
+		i /= 2;
+	}
+	return QByteArray::number(nodeID);
+}
+
 
 // Retrieve a random neighbor or -1 if current node has no peers
 Peer MessageSender::getNeighbor() {
@@ -775,6 +1012,37 @@ void MessageSender::addPeer(QString input) {
 	}
 }
 
+// Attempt to join a chord using a peer's host:port
+void MessageSender::joinChord(QString input) {
+	QStringList tempStr = input.split(':');
+	qDebug() << "Joining a chord" << input << endl;
+
+	// If more or less than one ':' is in the string, invalid format
+	if(tempStr.size() == 2) {
+		QHostAddress ipTest;
+
+		// Attempt to parse and convert the portnumber
+		bool portTest;
+		quint16 portNum = tempStr[1].toUShort(&portTest, 10);
+		if(!portTest) return;
+
+		// Check if the host is an ip address
+		if(ipTest.setAddress(tempStr[0])) {
+			QVariantMap newNodeMap;
+			newNodeMap.insert("nodeJoin", nodeID);
+			QByteArray newNodeMsg = getSerialized(newNodeMap);
+			socket->writeDatagram(newNodeMsg, ipTest, portNum);
+			return;
+		}
+		// Assume host is a host name and do a lookup
+		else {			
+			int id = QHostInfo::lookupHost(tempStr[0],this, SLOT(chordLookup(QHostInfo)));
+			portMap.insert(QString::number(id), portNum);
+			qDebug() << "ID is " << id << endl;
+		}
+	}
+}
+
 
 // Attempt to download a file using input as targetNodeID:hexadecimalBlocklistHash
 void MessageSender::downloadFile() {
@@ -804,6 +1072,14 @@ void MessageSender::addGuiPeer()
  	addPeer(addPeersLine->toPlainText());
  	addPeersLine->clear();
  }
+ 
+// Slot for joining peer's chord through UI
+void MessageSender::joinGuiChord()
+ {
+ 	MultiLineEdit *joinChordLine = chat->getJoinChordLine();
+ 	joinChord(joinChordLine->toPlainText());
+ 	joinChordLine->clear();
+ }
 
 
 // Slot returning result of the host lookup
@@ -829,6 +1105,31 @@ void MessageSender::peerLookup(QHostInfo host) {
 
 		QString peerKey = hostAddress.toString() + ":" + QString::number(portNum);
 		peerCheck.insert(peerKey);
+	}
+}
+
+// Slot returning result of the chord lookup
+void MessageSender::chordLookup(QHostInfo host) {
+
+	// Host lookup failed. Display error
+	if(host.error() != QHostInfo::NoError){
+		qDebug() << "Bad Host Name" << endl;
+	}
+	else if(!host.addresses().isEmpty()) {
+		QHostAddress hostAddress = host.addresses().first();
+		qDebug() << "Adding host address " << hostAddress << endl;
+
+		qDebug() << "LOOKUP ID " << host.lookupId() << endl;
+
+		// Retrieve the port number from the portmap using the lookupId as the key
+		int portNum = portMap.value(QString::number(host.lookupId())).toInt();
+		qDebug() << "PORTNUM " << portNum << endl;
+
+		// Send request to get your successor
+		QVariantMap newNodeMap;
+		newNodeMap.insert("nodeJoin", nodeID);
+		QByteArray newNodeMsg = getSerialized(newNodeMap);
+		socket->writeDatagram(newNodeMsg, ipTest, portNum);
 	}
 }
 

@@ -339,7 +339,7 @@ bool MessageSender::createFingerTable() {
 	fingerTable = new QHash<QByteArray, QList<QByteArray>>();
 	int start = 1;
 	for (int i = 0; i < 5; i++) {
-		fingerTable->insert(QByteArray::number((nodeID + start) % 5), QList<QByteArray>() << QByteArray::number((nodeID + start) % 5) << QByteArray::number((nodeID + start * 2) % 5) << QByteArray::number(-1));
+		fingerTable->insert(QByteArray::number((nodeID + start) % 32), QList<QByteArray>() << QByteArray::number((nodeID + start) % 32) << QByteArray::number((nodeID + start * 2) % 32) << QByteArray::number(-1));
 		start *= 2;
 	}
 	for (auto i = fingerTable->begin(); i != fingerTable->end(); i++) {

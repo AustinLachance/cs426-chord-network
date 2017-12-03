@@ -294,19 +294,6 @@ MessageSender::MessageSender()
 	nodeID = hashedShit.right(2).toInt()%32;
 	
 	
-// Create a bit array of the appropriate size
-QBitArray bits(160);
-
-// Convert from QByteArray to QBitArray
-for(int i=0; i<20; ++i) {
-    for(int b=0; b<8;b++) {
-        bits.setBit( i*8+b, hashedShit.at(i)&(1<<(7-b)) );
-    }
-}
-	
-	
-	
-	
 
 	qDebug() << "My OriginID is " << originID << endl;
 	qDebug() << "My nodeID TEST is " << QString::number(nodeID) << endl;

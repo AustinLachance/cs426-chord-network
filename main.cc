@@ -235,6 +235,7 @@ void Peer::setPort(quint16 portNum) {
 // Constructor for MessageSender class
 MessageSender::MessageSender()
 {
+	
 	// Create instance of ChatDialog and show it
 	chat = new ChatDialog();
 	chat->show();
@@ -265,6 +266,12 @@ MessageSender::MessageSender()
 			peerCheck.insert(peerKey);
 		}
 	}
+	
+	//Create a chord fingerTable - id maps to size 3 list (start, end, successor)
+	fingerTable = new QHash<QByteArray, QList<QByteArray>>();
+	
+	//Create a chord fileTable - id maps to all the blocks of a file
+	fileTable = new QHash<QByteArray, QList<QByteArray>>();
 
 	// Add command line peers
 	QStringList args = QCoreApplication::arguments();
@@ -288,12 +295,6 @@ MessageSender::MessageSender()
 
 	qDebug() << "My OriginID is " << originID << endl;
 	qDebug() << "My nodeID is " << QString::number(nodeID) << endl;
-	
-	//Create a chord fingerTable - id maps to size 3 list (start, end, successor)
-	fingerTable = new QHash<QByteArray, QList<QByteArray>>();
-	
-	//Create a chord fileTable - id maps to all the blocks of a file
-	fileTable = new QHash<QByteArray, QList<QByteArray>>();
 	
 	// Create a timer for chord stabilization
 	stabilizeTimer = new QTimer(this);
@@ -1080,6 +1081,7 @@ void MessageSender::addGuiPeer()
 // Slot for joining peer's chord through UI
 void MessageSender::joinGuiChord()
  {
+ 	
  	createFingerTable();
  	MultiLineEdit *joinChordLine = chat->getJoinChordLine();
  	joinChord(joinChordLine->toPlainText());

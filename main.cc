@@ -533,7 +533,7 @@ void MessageSender::onReceive()
 		receivedMap.remove("findClosestPredecessor");
 		receivedMap.insert("findSuccessor", -1);
 		QByteArray findSuccessorMsg = getSerialized(receivedMap);
-		socket->writeDatagram(findSuccessorMsg, QHostAddress(fingerTable[closestPredecessor][3].toInt()), fingerTable[closestPredecessor][4].toInt());
+		socket->writeDatagram(findSuccessorMsg, QHostAddress((*fingerTable)[closestPredecessor][3].toInt()), (*fingerTable)[closestPredecessor][4].toInt());
 		return;
 	}
 	
@@ -945,9 +945,8 @@ QVariantMap MessageSender::createBlockRequest(QString dest, QString origin, QByt
 // Find the successor for the given ID
 bool MessageSender::findSuccessor(quint32 newNode) {
 	// The node's successor is this current node's successor
-	if ((newNode > nodeID && newNode < successor.first) || (nodeID < newNode && newNode > successor.first) 
-	|| (nodeID > newNode && newNode < successor.first)
-	(newNode < nodeID && newNode < successor.first)) {
+	if ((nodeID < newNode && newNode < successor.first) || (nodeID < newNode && newNode > successor.first) 
+	|| (nodeID > newNode && newNode < successor.first)) {
 		return true;
 	}
 	return false;
@@ -956,11 +955,11 @@ bool MessageSender::findSuccessor(quint32 newNode) {
 QByteArray MessageSender::findClosestPredecessor(quint32 newNode) {
 	int i = 16;
 	while (i >= 1) {
-		QByteArray fingerKey = QByteArray::((nodeID + i) % 32);
-		quint32 successorID = fingerTable[fingerKey][2].toInt();
+		QByteArray fingerKey = QByteArray::number((nodeID + i) % 32);
+		quint32 successorID = (*fingerTable)[fingerKey][2].toInt();
 		if ((nodeID < successorID && successorID < newNode) || (nodeID < successorID && successorID > newNode)
 		|| (nodeID > successorID && successorID < newNode)) {
-			fingerKey
+			return fingerKey;
 		}	
 		i /= 2;
 	}

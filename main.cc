@@ -286,11 +286,12 @@ MessageSender::MessageSender()
 	// hashObj.update(dummyByte);
 	
 	QByteArray hashedShit = QCA::Hash("sha1").hash(originID.toLatin1()).toByteArray();
-	
+	bool FUCK = true;
 	qDebug() << "tryna hash my originID" << endl;
 	qDebug() << hashedShit << endl;
 	qDebug() << hashedShit.toInt() << endl;
 	qDebug() << hashedShit.toHex() << endl;
+	qDebug() << hashedShit.toHex().toUInt(&FUCK, 10) << endl;
 	nodeID = hashedShit.toInt() % 32;
 
 	qDebug() << "My OriginID is " << originID << endl;

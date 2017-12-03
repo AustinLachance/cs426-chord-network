@@ -290,9 +290,8 @@ MessageSender::MessageSender()
 	qDebug() << "tryna hash my originID" << endl;
 	qDebug() << hashedShit << endl;
 	qDebug() << hashedShit.right(2).toHex() << endl;
-	qDebug() << "TEST: " << << hashedShit.right(2).toInt() endl;
-	qDebug() << hashedShit % 32 << endl;
-	nodeID = hashedShit%32;
+	qDebug() << "TEST: " << hashedShit.right(2).toInt() endl;
+	nodeID = hashedShit.right(2).toInt()%32;
 	
 	
 // Create a bit array of the appropriate size

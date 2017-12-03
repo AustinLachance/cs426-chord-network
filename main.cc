@@ -289,9 +289,8 @@ MessageSender::MessageSender()
 	bool FUCK = true;
 	qDebug() << "tryna hash my originID" << endl;
 	qDebug() << hashedShit << endl;
-	qDebug() << hashedShit.toInt() << endl;
-	qDebug() << QString::number(hashedShit.toHex()) << endl;
-	// qDebug() << hashedShit.toHex().toUInt(&FUCK, 10) << endl;
+	qDebug() << hashedShit.toHex() << endl;
+	qDebug() << hashedShit % 32 << endl;
 	nodeID = hashedShit.toInt() % 32;
 
 	qDebug() << "My OriginID is " << originID << endl;

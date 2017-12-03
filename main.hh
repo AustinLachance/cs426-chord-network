@@ -161,7 +161,6 @@ public slots:
 	void peerLookup(QHostInfo host);
 	void chordLookup(QHostInfo host);
 	void addGuiPeer();
-	void joinGuiPeer();
 	void joinGuiChord();
 	void startFileDownload(QListWidgetItem * listItem);
 	void openFileDialog();

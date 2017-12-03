@@ -326,7 +326,7 @@ MessageSender::MessageSender()
 	connect(addPeersLine, SIGNAL(returnPressed()),this, SLOT(addGuiPeer()));
 	
 	// User presses return after entering a "host:port" to join a peer's chord
-	connect(joinChordLine, SIGNAL(returnPressed()), this, SLOT(joinGuiPeer()));
+	connect(joinChordLine, SIGNAL(returnPressed()), this, SLOT(joinGuiChord()));
 
 	// User presses return after entering a "targetNodeID:hexDataHash" to download a file
 	connect(downloadFileLine, SIGNAL(returnPressed()), this, SLOT(downloadFile()));

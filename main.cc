@@ -126,6 +126,11 @@ MultiLineEdit *ChatDialog::getJoinChordLine() {
 	return joinChordLine;
 }
 
+// Return the search File line
+MultiLineEdit *ChatDialog::getSearchFileLine() {
+	return searchFileLine;
+}
+
 
 // Return the download file text line of the ChatDialog
 MultiLineEdit *ChatDialog::getDownloadFileLine() {
@@ -350,6 +355,7 @@ MessageSender::MessageSender()
 	MultiLineEdit* downloadFileLine = chat->getDownloadFileLine();
 	MultiLineEdit* fileSearchLine = chat->getFileSearchLine();
 	MultiLineEdit* joinChordLine = chat->getJoinChordLine();
+	MultiLineEdit* searchFileLine = chat->getSearchFileLine();
 	QListWidget *fileSearchResultsList = chat->getFileSearchResultsList();
 	QPushButton *shareFileButton = chat->getShareFileButton();
 	QPushButton *displayTableButton = chat->getDisplayTableButton();
@@ -909,8 +915,8 @@ void MessageSender::onReceive()
 					storeFileMap.insert("store", 1);
 					storeFileMap.insert("fildID", fileID);
 					storeFileMap.insert("fileName", QString((*fileTable)[key][0].toString()));
-					socket->writeDatagram(getSerialized(storeFileMap, predecessor.second.first, predecessor.second.second));
-					fileTable.remove(key);
+					socket->writeDatagram(getSerialized(storeFileMap), predecessor.second.first, predecessor.second.second);
+					fileTable->remove(key);
 					makeStoredFileGui();
 				}
 				

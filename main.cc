@@ -12,20 +12,20 @@ ChatDialog::ChatDialog()
 	setWindowTitle("Peerster");
 
 	// Successor
-	QLabel *successorLabel = new QLabel();
-	successorLabel->setText("Successor");
-	successorGui = new QTextEdit();
-	successorGui->setReadOnly(true);
-	successorGui->setMaximumHeight(40);
-	successorGui->setMaximumWidth(40);
+	// QLabel *successorLabel = new QLabel();
+	// successorLabel->setText("Successor");
+	// successorGui = new QTextEdit();
+	// successorGui->setReadOnly(true);
+	// successorGui->setMaximumHeight(40);
+	// successorGui->setMaximumWidth(40);
 	
-	// Predecessor
-	QLabel *predecessorLabel = new QLabel();
-	predecessorLabel->setText("Predecessor");
-	predecessorGui = new QTextEdit();
-	predecessorGui->setReadOnly(true);
-	predecessorGui->setMaximumHeight(40);
-	predecessorGui->setMaximumWidth(40);
+	// // Predecessor
+	// QLabel *predecessorLabel = new QLabel();
+	// predecessorLabel->setText("Predecessor");
+	// predecessorGui = new QTextEdit();
+	// predecessorGui->setReadOnly(true);
+	// predecessorGui->setMaximumHeight(40);
+	// predecessorGui->setMaximumWidth(40);
 	
 	// Create the share file button
 	shareFileButton = new QPushButton("Share a File");
@@ -70,23 +70,23 @@ ChatDialog::ChatDialog()
 	fileLayout->addWidget(fileSearchResultsLabel);
 	fileLayout->addWidget(fileSearchResultsList);
 
-	QHBoxLayout *predInfo = new QHBoxLayout();
-	predInfo->addWidget(predecessorLabel);
-	predInfo->addWidget(predecessorGui);
+	// QHBoxLayout *predInfo = new QHBoxLayout();
+	// predInfo->addWidget(predecessorLabel);
+	// predInfo->addWidget(predecessorGui);
 	
-	QHBoxLayout *succInfo = new QHBoxLayout();
-	succInfo->addWidget(successorLabel);
-	succInfo->addWidget(successorGui);
+	// QHBoxLayout *succInfo = new QHBoxLayout();
+	// succInfo->addWidget(successorLabel);
+	// succInfo->addWidget(successorGui);
 	
-	QVBoxLayout *nodeInfo = new QVBoxLayout();
-	nodeInfo->addLayout(predInfo);
-	nodeInfo->addLayout(succInfo);
+	// QVBoxLayout *nodeInfo = new QVBoxLayout();
+	// nodeInfo->addLayout(predInfo);
+	// nodeInfo->addLayout(succInfo);
 	
-	nodeInfo->addWidget(successorLabel);
-	nodeInfo->addWidget(successorGui);
+	// nodeInfo->addWidget(successorLabel);
+	// nodeInfo->addWidget(successorGui);
 	
 	QHBoxLayout *topLayout = new QHBoxLayout();
-	topLayout->addLayout(nodeInfo);
+	// topLayout->addLayout(nodeInfo);
 	topLayout->addLayout(fileLayout);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout();
@@ -339,8 +339,8 @@ MessageSender::MessageSender()
 	successor.first = 257;
 	predecessor.first = 257;
 	rNearest.append(successor);
-	chat->getSuccessorGui()->append(QString::number(257));
-	chat->getPredecessorGui()->append(QString::number(257));
+	// chat->getSuccessorGui()->append(QString::number(257));
+	// chat->getPredecessorGui()->append(QString::number(257));
 
 	// ******** Signal->Slot connections ************************************************
 
@@ -441,8 +441,8 @@ void MessageSender::stabilizePredecessor(QVariantMap map) {
 	// Node has been inserted between us and our old successor. Make this node new successor
 	if((this->nodeID < tempNodeID && tempNodeID < succID) || (this->nodeID > tempNodeID && tempNodeID < succID && succID < nodeID)
 	|| (this->nodeID < tempNodeID && tempNodeID > succID && succID < nodeID)) {
-		chat->getSuccessorGui()->clear();
-		chat->getSuccessorGui()->append(QString::number(tempNodeID));
+		// chat->getSuccessorGui()->clear();
+		// chat->getSuccessorGui()->append(QString::number(tempNodeID));
 		this->successor = tempNode;
 	}
 }
@@ -503,9 +503,11 @@ void MessageSender::updateTable() {
 void MessageSender::failureProtocol() {
 	qDebug() << "SHIT";
 	rNearest.removeFirst();
+	if (!rNearest.size()) return;
 	successor.first = rNearest[0].first;
 	successor.second.first = rNearest[0].second.first;
-	
+	successor.second.second = rNearest[0].second.second;
+	//add for stabilize monitoring rNearest successors
 }
 
 
@@ -784,8 +786,8 @@ void MessageSender::onReceive()
 		// If predecessor doesn't exist or tempNode falls btw old predecessor and us then update
 		if((predecessor.first == 257) || (tempNodeID > predecessor.first && tempNodeID < nodeID) || (predecessor.first > tempNodeID && tempNodeID < nodeID && nodeID < predecessor.first)
 		|| (predecessor.first < tempNodeID && tempNodeID > nodeID && predecessor.first > nodeID)) {
-			chat->getPredecessorGui()->clear();
-			chat->getPredecessorGui()->append(QString::number(tempNodeID));
+			// chat->getPredecessorGui()->clear();
+			// chat->getPredecessorGui()->append(QString::number(tempNodeID));
 			this->predecessor = tempNode;
 		}
 		else {

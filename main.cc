@@ -14,12 +14,18 @@ ChatDialog::ChatDialog()
 	// Successor
 	QLabel *successorLabel = new QLabel();
 	successorLabel->setText("Successor");
-	successorGui = new QListWidget();
+	successorGui = new QTextEdit();
+	successorGui->setReadOnly(true);
+	successorGui->setMaximumHeight(50);
+	successorGui->setMaximumWidth(50);
 	
 	// Predecessor
 	QLabel *predecessorLabel = new QLabel();
 	predecessorLabel->setText("Predecessor");
-	predecessorGui = new QListWidget();
+	predecessorGui = new QTextEdit();
+	predecessorGui->setReadOnly(true);
+	predecessorGui->setMaximumHeight(50);
+	predecessorGui->setMaximumWidth(50);
 	
 
 	// Create the share file button
@@ -65,10 +71,18 @@ ChatDialog::ChatDialog()
 	fileLayout->addWidget(fileSearchResultsLabel);
 	fileLayout->addWidget(fileSearchResultsList);
 
-
+	QHBoxLayout *predInfo = new QHBoxLayout();
+	predInfo->addWidget(predecessorLabel);
+	predInfo->addWidget(predecessorGui);
+	
+	QHBoxLayout *succInfo = new QHBoxLayout();
+	succInfo->addWidget(successorLabel);
+	succInfo->addWidget(successorGui);
+	
 	QVBoxLayout *nodeInfo = new QVBoxLayout();
-	nodeInfo->addWidget(predecessorLabel);
-	nodeInfo->addWidget(predecessorGui);
+	nodeInfo->addLayout(predInfo);
+	nodeInfo->addLayout(succInfo);
+	
 	nodeInfo->addWidget(successorLabel);
 	nodeInfo->addWidget(successorGui);
 	
@@ -104,11 +118,6 @@ QListWidget *ChatDialog::getSuccessorGui() {
 	return successorGui;
 }
 
-
-// Return the add Peers text line of the ChatDialog
-MultiLineEdit *ChatDialog::getAddPeersLine() {
-	return addPeersLine;
-}
 
 // Return the join Chord text line of the ChatDialog
 MultiLineEdit *ChatDialog::getJoinChordLine() {
@@ -323,7 +332,6 @@ MessageSender::MessageSender()
 
 	// Get references to private members of ChatDialog
 	MultiLineEdit* textline = chat->getTextLine();
-	MultiLineEdit* addPeersLine = chat->getAddPeersLine();
 	MultiLineEdit* downloadFileLine = chat->getDownloadFileLine();
 	MultiLineEdit* fileSearchLine = chat->getFileSearchLine();
 	MultiLineEdit* joinChordLine = chat->getJoinChordLine();
@@ -331,16 +339,13 @@ MessageSender::MessageSender()
 	QPushButton *shareFileButton = chat->getShareFileButton();
 	successor.first = 257;
 	predecessor.first = 257;
-	chat->getSuccessorGui()->addItem(QString::number(257));
-	chat->getPredecessorGui()->addItem(QString::number(257));
+	chat->getSuccessorGui()->append(QString::number(257));
+	chat->getPredecessorGui()->append(QString::number(257));
 
 	// ******** Signal->Slot connections ************************************************
 
 	// User presses return after entering chat message
 	connect(textline, SIGNAL(returnPressed()), this, SLOT(gotReturnPressed()));
-
-	// User presses return after entering a "host:port" to add a peer
-	connect(addPeersLine, SIGNAL(returnPressed()),this, SLOT(addGuiPeer()));
 
 	// User presses return after entering a "host:port" to join a peer's chord
 	connect(joinChordLine, SIGNAL(returnPressed()), this, SLOT(joinGuiChord()));
@@ -437,7 +442,7 @@ void MessageSender::stabilizePredecessor(QVariantMap map) {
 	if((this->nodeID < tempNodeID && tempNodeID < succID) || (this->nodeID > tempNodeID && tempNodeID < succID && succID < nodeID)
 	|| (this->nodeID < tempNodeID && tempNodeID > succID && succID < nodeID)) {
 		chat->getSuccessorGui()->clear();
-		chat->getSuccessorGui()->addItem(QString::number(tempNodeID));
+		chat->getSuccessorGui()->append(QString::number(tempNodeID));
 		this->successor = tempNode;
 	}
 }
@@ -776,7 +781,7 @@ void MessageSender::onReceive()
 		if((predecessor.first == 257) || (tempNodeID > predecessor.first && tempNodeID < nodeID) || (predecessor.first > tempNodeID && tempNodeID < nodeID && nodeID < predecessor.first)
 		|| (predecessor.first < tempNodeID && tempNodeID > nodeID && predecessor.first > nodeID)) {
 			chat->getPredecessorGui()->clear();
-			chat->getPredecessorGui()->addItem(QString::number(tempNodeID));
+			chat->getPredecessorGui()->append(QString::number(tempNodeID));
 			this->predecessor = tempNode;
 		}
 		else {
@@ -1258,14 +1263,6 @@ void MessageSender::downloadFile() {
 	sendToPeers(serialBlockRequest);
 }
 
-
-// Slot for adding peer through UI
-void MessageSender::addGuiPeer()
- {
- 	MultiLineEdit *addPeersLine = chat->getAddPeersLine();
- 	addPeer(addPeersLine->toPlainText());
- 	addPeersLine->clear();
- }
 
 // Slot for joining peer's chord through UI
 void MessageSender::joinGuiChord()

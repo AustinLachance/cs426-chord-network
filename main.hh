@@ -63,19 +63,17 @@ public:
 
 	QTextEdit *getTextView();
 	MultiLineEdit *getTextLine();
-	MultiLineEdit *getAddPeersLine();
 	MultiLineEdit *getDownloadFileLine();
 	MultiLineEdit *getFileSearchLine();
 	MultiLineEdit *getJoinChordLine();
 	QListWidget *getFileSearchResultsList();
 	QPushButton *getShareFileButton();
-	QListWidget *getPredecessorGui();
-	QListWidget *getSuccessorGui();
+	QTextEdit *getPredecessorGui();
+	QTextEdit *getSuccessorGui();
 
 private:
 	QTextEdit *textview;
 	MultiLineEdit *textline;
-	MultiLineEdit *addPeersLine;
 	MultiLineEdit *downloadFileLine;
 	MultiLineEdit *fileSearchLine;
 	MultiLineEdit *joinChordLine;
@@ -165,7 +163,6 @@ public slots:
 	void onReceive();
 	void peerLookup(QHostInfo host);
 	void chordLookup(QHostInfo host);
-	void addGuiPeer();
 	void joinGuiChord();
 	void startFileDownload(QListWidgetItem * listItem);
 	void openFileDialog();

@@ -432,6 +432,7 @@ void MessageSender::stabilizePredecessor(QVariantMap map) {
 		rNearest.clear();
 		rNearest.append(this->successor);
 		rNearest.append(oldSuccessor);
+		successorFailTimer->stop();
 	}
 	
 	// new node is not within us and our old successor. Update our secondSuccessor to be our successor's successor 
@@ -789,7 +790,8 @@ void MessageSender::onReceive()
 		|| (predecessor.first < tempNodeID && tempNodeID > nodeID && predecessor.first > nodeID)) {
 			chat->getPredecessorGui()->clear();
 			chat->getPredecessorGui()->append(QString::number(tempNodeID));
-			checkPredTimer->
+			checkPredTimer->stop();
+			predResponseTimer->stop();
 			this->predecessor = tempNode;
 		}
 		else {

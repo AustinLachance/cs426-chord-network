@@ -635,7 +635,7 @@ void MessageSender::onReceive()
 	if (receivedMap.contains("store") && receivedMap.contains("fileID")) {
 		QList<QByteArray> fileEntry;
 		QString fileName = receivedMap["fileName"].toString();
-		fileEntry.append(QByteArray(fileName));
+		fileEntry.append(fileName);
 		fileTable->insert(QByteArray::number(receivedMap["fileID"].toInt()), fileEntry);
 		qDebug() << "Currently housed files";
 		

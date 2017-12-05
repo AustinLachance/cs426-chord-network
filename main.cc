@@ -1379,7 +1379,7 @@ void MessageSender::joinChord(QString input) {
 	}
 }
 
-void makeStoredFileGui() {
+void MessageSender::makeStoredFileGui() {
 	for(auto key: (*fileTable).keys()) {
 		QString fileNameString = key.toString() + ":\t" + QString((*fileTable)[key][0].toString());
 		chat->getChordFileStore()->addItem(fileNameString);

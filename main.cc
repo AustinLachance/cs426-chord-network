@@ -609,11 +609,11 @@ void MessageSender::onReceive()
 	else if (receivedMap.contains("updateNode") && receivedMap.contains("findClosestPredecessor")) {
 		qDebug() << "supposed to find closest predecessor";
 		QByteArray closestPredecessor = findClosestPredecessor(receivedMap["updateNode"].toInt());
-		// if (closestPredecessor.toInt() == nodeID) {
-		// 	receivedMap.insert("findSuccessor", 1);
-		// 	handleFindSuccessor(receivedMap);
-		// 	return;
-		// }
+		if (closestPredecessor.toInt() == nodeID) {
+			receivedMap.insert("findSuccessor", 1);
+			handleFindSuccessor(receivedMap);
+			return;
+		}
 		// Shouldn't have to check, but its possible that you yourself are the closest predecessor
 		receivedMap.remove("findClosestPredecessor");
 		receivedMap.insert("findSuccessor", 1);

@@ -69,6 +69,8 @@ public:
 	MultiLineEdit *getJoinChordLine();
 	QListWidget *getFileSearchResultsList();
 	QPushButton *getShareFileButton();
+	QListWidget *getPredecessorGui();
+	QListWidget *getSuccessorGui();
 
 private:
 	QTextEdit *textview;
@@ -78,6 +80,8 @@ private:
 	MultiLineEdit *fileSearchLine;
 	MultiLineEdit *joinChordLine;
 	QListWidget *fileSearchResultsList;
+	QListWidget *successorGui;
+	QListWidget *predecessorGui;
 	QPushButton *shareFileButton;
 };
 
@@ -171,6 +175,7 @@ public slots:
 	void checkPredecessor();
 	void deadPredecessor();
 	void updateTable();
+	void failureProtocol();
 
 private:
 	ChatDialog *chat;
@@ -203,6 +208,7 @@ private:
 	QTimer *predResponseTimer;
 
 	QTimer *fingerTableTimer;
+	QTimer *successorFailTimer;
 
 };
 

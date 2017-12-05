@@ -11,25 +11,19 @@ ChatDialog::ChatDialog()
 {
 	setWindowTitle("Peerster");
 
-	// Window displaying received chat messages
-	textview = new QTextEdit();
-	textview->setReadOnly(true);
-
-	// Text editor for sending public messages to the network
-	textline = new MultiLineEdit();
-	textline->setFocus();
-	textline->setMaximumHeight(50);
-	QLabel *editorLabel = new QLabel();
-	editorLabel->setText("Send messages here!");
+	// Successor
+	QLabel *successorLabel = new QLabel();
+	successorLabel->setText("Successor");
+	successorGui = new QListWidget();
+	
+	// Predecessor
+	QLabel *predecessorLabel = new QLabel();
+	predecessorLabel->setText("Predecessor");
+	predecessorGui = new QListWidget();
+	
 
 	// Create the share file button
 	shareFileButton = new QPushButton("Share a File");
-
-	// Add Peers text editor
-	addPeersLine = new MultiLineEdit();
-	addPeersLine->setMaximumHeight(50);
-	QLabel *peersLabel = new QLabel();
-	peersLabel->setText("Add peer with host:port");
 
 	//Join Chord text editor
 	joinChordLine = new MultiLineEdit();
@@ -56,10 +50,6 @@ ChatDialog::ChatDialog()
 
 	// Text editor for sending messages and adding new friends
 	QVBoxLayout *editingLayout = new QVBoxLayout();
-	editingLayout->addWidget(editorLabel);
-	editingLayout->addWidget(textline);
-	editingLayout->addWidget(peersLabel);
-	editingLayout->addWidget(addPeersLine);
 	editingLayout->addWidget(chordLabel);
 	editingLayout->addWidget(joinChordLine);
 
@@ -76,8 +66,12 @@ ChatDialog::ChatDialog()
 	fileLayout->addWidget(fileSearchResultsList);
 
 
+	QVBoxLayout *nodeInfo = new QVBoxLayout();
+	nodeInfo->addWidget(predecessorGui);
+	nodeInfo->addWidget(successorGui);
+	
 	QHBoxLayout *topLayout = new QHBoxLayout();
-	topLayout->addWidget(textview);
+	topLayout->addWidget(nodeInfo);
 	topLayout->addLayout(fileLayout);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout();
@@ -96,6 +90,16 @@ QTextEdit *ChatDialog::getTextView() {
 // Return the text editor of the ChatDialog
 MultiLineEdit *ChatDialog::getTextLine() {
 	return textline;
+}
+
+// Return the predecessor Gui
+QListWidget *ChatDialog::getPredecessorGui() {
+	return predecessorGui;
+}
+
+// Return the successor Gui
+QListWidget *ChatDialog::getSuccessorGui() {
+	return successorGui;
 }
 
 
@@ -287,7 +291,7 @@ MessageSender::MessageSender()
 	quint16 result;
 	in >> result;
 	nodeID = result % 256;
-	updateNum = nodeID + 1 % 256;
+	updateNum = (nodeID + 1) % 256;
 	entryNum = 1;
 	chat->setWindowTitle("Node " + QString::number(nodeID));
 
@@ -311,6 +315,9 @@ MessageSender::MessageSender()
 
 	// Timer to update fingerTable
 	fingerTableTimer = new QTimer(this);
+	
+	// Timer to detect a failed successor
+	successorFailTimer = new QTimer(this);
 
 	// Get references to private members of ChatDialog
 	MultiLineEdit* textline = chat->getTextLine();
@@ -322,6 +329,8 @@ MessageSender::MessageSender()
 	QPushButton *shareFileButton = chat->getShareFileButton();
 	successor.first = 257;
 	predecessor.first = 257;
+	chat->getSuccessor()->addItem(QString::number(257));
+	chat->getPredecessor()->addItem(QString::number(257));
 
 	// ******** Signal->Slot connections ************************************************
 
@@ -360,6 +369,9 @@ MessageSender::MessageSender()
 
 	// Update the successor for every interval in our table
 	connect(fingerTableTimer, SIGNAL(timeout()), this, SLOT(updateTable()));
+	
+	// Connect the successor failure timer to the update protocol
+	connect(successorFailTimer, SIGNAL(timeout()), this, SLOT(failureProtocol()));
 
 	fingerTableTimer->start(5000);
 
@@ -422,6 +434,8 @@ void MessageSender::stabilizePredecessor(QVariantMap map) {
 	// Node has been inserted between us and our old successor. Make this node new successor
 	if((this->nodeID < tempNodeID && tempNodeID < succID) || (this->nodeID > tempNodeID && tempNodeID < succID && succID < nodeID)
 	|| (this->nodeID < tempNodeID && tempNodeID > succID && succID < nodeID)) {
+		chat->getSuccessorGui()->clear();
+		chat->getSuccessorGui()->addItem(QString::number(tempNodeID));
 		this->successor = tempNode;
 	}
 }
@@ -476,6 +490,11 @@ void MessageSender::updateTable() {
 	// 	QByteArray updateFingerMsg = getSerialized(updateFingerMap);
 	// 	socket->writeDatagram(updateFingerMsg, this->successor.second.first, this->successor.second.second);
 	// }
+}
+
+// Slot method to update fingerTable
+void MessageSender::failureProtocol() {
+	
 }
 
 
@@ -544,6 +563,28 @@ void MessageSender::onReceive()
 	// 	addPeer(peerKey);
 	// }
 
+	// Rehash nodeID if collision with existing node
+	if (receivedMap.contains("collision")) {
+		QString idVal = QString::number(qrand());
+		QString hostName = QHostInfo::localHostName();
+		originID = hostName + idVal;
+		QCA::Initializer qcainit;
+	
+		QByteArray nodeHash = QCA::Hash("sha1").hash(originID.toLatin1()).toByteArray();
+		QDataStream in(nodeHash.right(2));
+		in.setByteOrder(QDataStream::BigEndian);
+		quint16 result;
+		in >> result;
+		nodeID = result % 256;
+		updateNum = (nodeID + 1) % 256;
+		entryNum = 1;
+		chat->setWindowTitle("Node " + QString::number(nodeID));
+		QVariantMap newNodeMap;
+		newNodeMap.insert("updateNode", nodeID);
+		QByteArray newNodeMsg = getSerialized(newNodeMap);
+		socket->writeDatagram(newNodeMsg, *senderAddress, *senderPort);
+		return;
+	}
 
 	// If we receive an updateFinger response, update our table
 	if (receivedMap.contains("updateFinger") && receivedMap["updateFinger"].toInt() == nodeID && receivedMap.contains("successorID")) {
@@ -590,21 +631,8 @@ void MessageSender::onReceive()
 	// If a chord node receives a forwarded message to find a new node's successor
 	else if (receivedMap.contains("updateNode") && receivedMap.contains("findSuccessor")) {
 		//call successor with this newChord
-		if (findSuccessor(receivedMap["updateNode"].toInt())) {
-			receivedMap.insert("successorID", successor.first);
-			receivedMap.insert("successorAddress", successor.second.first.toIPv4Address());
-			receivedMap.insert("successorPort", successor.second.second);
-			QByteArray newNodeSuccessorMsg = getSerialized(receivedMap);
-			socket->writeDatagram(newNodeSuccessorMsg, QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
-			return;
-		}
-		else {
-			receivedMap.remove("findSuccessor");
-			receivedMap.insert("findClosestPredecessor", 1);
-			QByteArray findClosestPredMsg = getSerialized(receivedMap);
-			socket->writeDatagram(findClosestPredMsg, successor.second.first, successor.second.second);
-			return;
-		}
+		handleFindSuccessor(receivedMap);
+		return;
 
 	}
 	// If a chord node receives a forwarded message to find its closest predecessor to a new node
@@ -628,6 +656,12 @@ void MessageSender::onReceive()
 	// If message is from a new node joining the chord, first check your own successors.
 	// else change message for your successors to find the new node's successor
 	else if (receivedMap.contains("updateNode")) {
+		if (receivedMap["updateNode"].toInt() == successor.first || receivedMap["updateNode"].toInt() == nodeID) {
+			QVariantMap collision;
+			collision.insert("collision", 1);
+			socket->writeDatagram(getSerialized(collision), QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
+			return;
+		}
 		// The creator node was finally joined by another node - make this node your successor and predecesssor - 2 node chord
 		if (successor.first == 257 && predecessor.first == 257) {
 			successor.first = receivedMap["updateNode"].toInt();
@@ -739,6 +773,8 @@ void MessageSender::onReceive()
 		// If predecessor doesn't exist or tempNode falls btw old predecessor and us then update
 		if((predecessor.first == 257) || (tempNodeID > predecessor.first && tempNodeID < nodeID) || (predecessor.first > tempNodeID && tempNodeID < nodeID && nodeID < predecessor.first)
 		|| (predecessor.first < tempNodeID && tempNodeID > nodeID && predecessor.first > nodeID)) {
+			chat->getPredecessor()->clear();
+			chat->getPredecessor()->addItem(QString::number(tempNodeID));
 			this->predecessor = tempNode;
 		}
 		else {
@@ -850,6 +886,12 @@ void MessageSender::localFileSearch(QString searchStr, QString dest) {
 
 // Protocol for handling find successor request
 void MessageSender::handleFindSuccessor(QVariantMap receivedMap) {
+	if (receivedMap["updateNode"].toInt() == successor.first || receivedMap["updateNode"].toInt() == nodeID) {
+		QVariantMap collision;
+		collision.insert("collision", 1);
+		socket->writeDatagram(getSerialized(collision), QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
+		return;
+	}
 	if (findSuccessor(receivedMap["updateNode"].toInt())) {
 			receivedMap.insert("successorID", successor.first);
 			receivedMap.insert("successorAddress", successor.second.first.toIPv4Address());

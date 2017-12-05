@@ -577,7 +577,7 @@ void MessageSender::onReceive()
 			successor.second.first = QHostAddress(receivedMap["successorAddress"].toInt());
 			successor.second.second = receivedMap["successorPort"].toInt();
 		}
-		qDebug() << "My successor is " << QString::number(successor.first);
+		qDebug() << "My successor is " << QString::number(successor.first) << ;
 		return;
 	}
 	// If a chord node receives a forwarded message to find a new node's successor
@@ -586,7 +586,7 @@ void MessageSender::onReceive()
 		if (findSuccessor(receivedMap["updateNode"].toInt())) {
 			receivedMap.insert("successorID", successor.first);
 			receivedMap.insert("successorAddress", successor.second.first.toIPv4Address());
-			receivedMap.insert("sucessorPort", successor.second.second);
+			receivedMap.insert("successorPort", successor.second.second);
 			QByteArray newNodeSuccessorMsg = getSerialized(receivedMap);
 			socket->writeDatagram(newNodeSuccessorMsg, QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
 			return;

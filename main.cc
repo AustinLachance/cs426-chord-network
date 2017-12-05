@@ -531,8 +531,8 @@ void MessageSender::displayTable() {
 	QTableWidget *visualTable = tableDialog->getVisualTable();
 	visualTable->clear();
 	int start = 1;
-	visualTable->setColumnCount(5);
-	visualTable->setRowCount(7);
+	QStringList *labels = new QStringList();
+	QStringList << "Start ID" << "End ID" << "Successor ID" << "IP Address" << "Port";
 	for (int i = 0; i < 7; i++) {
 		QByteArray key = QByteArray::number((nodeID + start) % 256);
 		for (int j = 0; j < (*fingerTable)[key].size(); j++) {
@@ -624,8 +624,22 @@ void MessageSender::onReceive()
 		return;
 	}
 
+	// If we receive the correct spot for this file
+	if (receivedMap.contains("fileNode") && receivedMap["fileNode"].toInt() == nodeID && (receivedMap.contains("successorID")) || receivedMap.contains("match")) {
+		QVariantMap storeMap;
+		storeMap.insert("fileName", receivedMap["fileName"].toString());
+		storeMap.insert("fileID", receivedMap["updateNode"].toInt());
+		storeMap.insert("store", 1);
+		if (receivedMap.contains("match")) {
+			socket->writeDatagram(getSerialized(storeMap), *senderAddress, *senderPort);
+		}
+		else {
+			socket->writeDatagram(getSerialized(storeMap, QHostAddress(receivedMap["successorAddress"].toInt())), receivedMap["successorPort"].toInt());
+		}
+	}
+
 	// If we receive an updateFinger response, update our table
-	if (receivedMap.contains("updateFinger") && receivedMap["updateFinger"].toInt() == nodeID && receivedMap.contains("successorID")) {
+	else if (receivedMap.contains("updateFinger") && receivedMap["updateFinger"].toInt() == nodeID && receivedMap.contains("successorID")) {
 		QByteArray updateKey = QByteArray::number(receivedMap["updateNode"].toInt());
 		QByteArray successorID = QByteArray::number(receivedMap["successorID"].toInt());
 		QByteArray successorAddress = QByteArray::number(QHostAddress(receivedMap["successorAddress"].toInt()).toIPv4Address());
@@ -700,11 +714,15 @@ void MessageSender::onReceive()
 	// If message is from a new node joining the chord, first check your own successors.
 	// else change message for your successors to find the new node's successor
 	else if (receivedMap.contains("updateNode")) {
-		if (receivedMap["updateNode"].toInt() == successor.first || receivedMap["updateNode"].toInt() == nodeID) {
+		if (receivedMap.size() == 1 && receivedMap["updateNode"].toInt() == successor.first || receivedMap["updateNode"].toInt() == nodeID) {
 			QVariantMap collision;
 			collision.insert("collision", 1);
 			socket->writeDatagram(getSerialized(collision), QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
 			return;
+		}
+		if (receivedMap.contains("fileNode") && receivedMap["updateNode"].toInt() == nodeID) {
+			receivedMap.insert("match", 1);
+			socket->writeDatagram(getSerialized(receivedMap), *senderAddress, *senderPort);
 		}
 		// The creator node was finally joined by another node - make this node your successor and predecesssor - 2 node chord
 		if (successor.first == 257 && predecessor.first == 257) {
@@ -938,11 +956,16 @@ void MessageSender::localFileSearch(QString searchStr, QString dest) {
 
 // Protocol for handling find successor request
 void MessageSender::handleFindSuccessor(QVariantMap receivedMap) {
-	if (receivedMap["updateNode"].toInt() == successor.first || receivedMap["updateNode"].toInt() == nodeID) {
+	if (receivedMap.keys().size() == 1 && receivedMap["updateNode"].toInt() == successor.first || receivedMap["updateNode"].toInt() == nodeID) {
 		QVariantMap collision;
 		collision.insert("collision", 1);
 		socket->writeDatagram(getSerialized(collision), QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
 		return;
+	}
+	if (receivedMap.contains("fileNode") && receivedMap["updateNode"].toInt() == nodeID) {
+		receivedMap.insert("match", 1);
+		socket->writeDatagram(getSerialized(receivedMap), QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
+		
 	}
 	if (findSuccessor(receivedMap["updateNode"].toInt())) {
 			receivedMap.insert("successorID", successor.first);
@@ -1412,11 +1435,30 @@ void MessageSender::getFileMetadata(const QStringList &fileList) {
 	int size = fileList.size();
 	for(int i=0; i < size; i++) {
 		QCA::Hash shaHash("sha1");
+		
+		
+		QByteArray fileHash = QCA::Hash("sha1").hash(fileList[i].toLatin1()).toByteArray();
+		QDataStream in(fileHash.right(2));
+		in.setByteOrder(QDataStream::BigEndian);
+		quint16 result;
+		in >> result;
+		fileID = result % 256;
+		
+		qDebug() << "Uploading " << fileList[i] << endl;
+		qDebug() << "File Hash is " << QString::number(fileID);
+		
+		QVariantMap fileMap;
+		fileMap.insert("updateNode", fileID);
+		fileMap.insert("fileNode", nodeID);
+		fileMap.insert("fileName", fileList[i]);
+		socket->writeDatagram(getSerialized(fileMap), successor.second.first, successor.second.second);
+		
 		QFile file(fileList[i]);
 		QByteArray output;
 	    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
 	        continue;
 	    }
+	    
 	    QDataStream in(&file);
 	    int bytesRead;
 	    int totalBytes = 0;
@@ -1456,6 +1498,7 @@ void MessageSender::getFileMetadata(const QStringList &fileList) {
 		fileMetadata.insert(hashedMetafile, metadataMap);
 	}
 }
+
 
 TableDialog::TableDialog()
 {

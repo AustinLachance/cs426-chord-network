@@ -361,7 +361,7 @@ MessageSender::MessageSender()
 	// Connect the successor failure timer to the update protocol
 	connect(successorFailTimer, SIGNAL(timeout()), this, SLOT(failureProtocol()));
 	
-	successorFailTimer->start(5000);
+	// successorFailTimer->start(5000);
 
 	fingerTableTimer->start(5000);
 

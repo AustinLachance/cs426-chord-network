@@ -407,8 +407,12 @@ void MessageSender::stabilizeNode() {
 
 // Got our successor's predecessor. Continue stabilization
 void MessageSender::stabilizePredecessor(QVariantMap map) {
+	
 	int tempNodeID = map["nodeID"].toInt();
 	int succID = this->successor.first;
+	
+	qDebug() << "Got our successor's predecessor!" << endl;
+	qDebug() << "Checking if it our new successor is " << QString::number(tempNodeID) << endl;
 
 	QPair<QHostAddress, quint16> tempNodeInfo;
 	tempNodeInfo.first = QHostAddress(map["nodeAddress"].toInt());
@@ -578,27 +582,18 @@ void MessageSender::onReceive()
 	// If a chord node receives a forwarded message to find a new node's successor
 	else if (receivedMap.contains("updateNode") && receivedMap.contains("findSuccessor")) {
 		//call successor with this newChord
-		if (findSuccessor(receivedMap["updateNode"].toInt())) {
-			receivedMap.insert("successorID", successor.first);
-			receivedMap.insert("successorAddress", successor.second.first.toIPv4Address());
-			receivedMap.insert("sucessorPort", successor.second.second);
-			QByteArray newNodeSuccessorMsg = getSerialized(receivedMap);
-			socket->writeDatagram(newNodeSuccessorMsg, QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
-			return;
-		}
-		else {
-			receivedMap.remove("findSuccessor");
-			receivedMap.insert("findClosestPredecessor", 1);
-			QByteArray findClosestPredMsg = getSerialized(receivedMap);
-			socket->writeDatagram(findClosestPredMsg, successor.second.first, successor.second.second);
-			return;
-		}
+		handleFindSuccessor(receivedMap);
 
 	}
 	// If a chord node receives a forwarded message to find its closest predecessor to a new node
 	else if (receivedMap.contains("updateNode") && receivedMap.contains("findClosestPredecessor")) {
 		qDebug() << "supposed to find closest predecessor";
 		QByteArray closestPredecessor = findClosestPredecessor(receivedMap["updateNode"].toInt());
+		if (closestPredecessor.toInt() == nodeID) {
+			receivedMap.insert("findSuccessor", 1);
+			handleFindSuccessor(receivedMap);
+			return;
+		}
 		// Shouldn't have to check, but its possible that you yourself are the closest predecessor
 		receivedMap.remove("findClosestPredecessor");
 		receivedMap.insert("findSuccessor", 1);
@@ -670,7 +665,7 @@ void MessageSender::onReceive()
 
 		// No predecessor exists (Send 257)
 		if(predecessor.first == 257) {
-			predReply.insert("predecessorReply", 1);
+			predReply.insert("predecessorReply", 257);
 		}
 		// Predecessor exists (Send 1 and routing info)
 		else {
@@ -690,7 +685,7 @@ void MessageSender::onReceive()
 	else if(receivedMap.contains("predecessorReply")) {
 
 		// If Successor has a predecessor run stabilization protocol
-		if(receivedMap["predecessorReply"].toInt() != 1) {
+		if(receivedMap["predecessorReply"].toInt() != 257) {
 			stabilizePredecessor(receivedMap);
 		}
 
@@ -710,11 +705,16 @@ void MessageSender::onReceive()
 		int tempNodeID = receivedMap["nodeID"].toInt();
 		QPair<QHostAddress, quint16> tempNodeInfo(*senderAddress, *senderPort);
 		QPair<int, QPair<QHostAddress, quint16>> tempNode(tempNodeID, tempNodeInfo);
-
+		
+		qDebug() << "checking if my new pred is node " << QString::number(tempNodeID) << endl;
+		
 		// If predecessor doesn't exist or tempNode falls btw old predecessor and us then update
 		if((predecessor.first == 257) || (tempNodeID > predecessor.first && tempNodeID < nodeID) || (predecessor.first > tempNodeID && tempNodeID < nodeID && nodeID < predecessor.first)
 		|| (predecessor.first < tempNodeID && tempNodeID > nodeID && predecessor.first < nodeID)))) {
 			this->predecessor = tempNode;
+		}
+		else {
+			qDebug() << "Nope. Not my predecessor" << endl;
 		}
 
 		qDebug() << "Done stabilizing" << endl;
@@ -818,6 +818,25 @@ void MessageSender::localFileSearch(QString searchStr, QString dest) {
 	else {
 		qDebug() << "No results found here" << endl;
 	}
+}
+
+// Protocol for handling find successor request
+void MessageSender::handleFindSuccessor(QVariantMap receivedMap) {
+	if (findSuccessor(receivedMap["updateNode"].toInt())) {
+			receivedMap.insert("successorID", successor.first);
+			receivedMap.insert("successorAddress", successor.second.first.toIPv4Address());
+			receivedMap.insert("sucessorPort", successor.second.second);
+			QByteArray newNodeSuccessorMsg = getSerialized(receivedMap);
+			socket->writeDatagram(newNodeSuccessorMsg, QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
+			return;
+		}
+		else {
+			receivedMap.remove("findSuccessor");
+			receivedMap.insert("findClosestPredecessor", 1);
+			QByteArray findClosestPredMsg = getSerialized(receivedMap);
+			socket->writeDatagram(findClosestPredMsg, successor.second.first, successor.second.second);
+			return;
+		}
 }
 
 

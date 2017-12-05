@@ -153,6 +153,7 @@ public:
 	void stabilizePredecessor(QVariantMap map);
 	QByteArray findClosestPredecessor(quint32 newNode);
 	void joinChord(QString input);
+	void handleFindSuccessor(QVariantMap receivedMap);
 
 
 public slots:

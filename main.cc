@@ -1397,7 +1397,7 @@ void MessageSender::joinChord(QString input) {
 void MessageSender::makeStoredFileGui() {
 	qDebug() << "Updating list of files GUI" << endl;
 	chat->getChordFileStore()->clear();
-	
+	qDebug() << (*fileTable);
 	for(auto key: (*fileTable).keys()) {
 		QString fileNameString = QString::number(key.toInt()) + ":\t" + QString((*fileTable)[key][0]);
 		chat->getChordFileStore()->addItem(fileNameString);

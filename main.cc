@@ -16,18 +16,17 @@ ChatDialog::ChatDialog()
 	successorLabel->setText("Successor");
 	successorGui = new QTextEdit();
 	successorGui->setReadOnly(true);
-	successorGui->setMaximumHeight(50);
-	successorGui->setMaximumWidth(50);
+	successorGui->setMaximumHeight(40);
+	successorGui->setMaximumWidth(40);
 	
 	// Predecessor
 	QLabel *predecessorLabel = new QLabel();
 	predecessorLabel->setText("Predecessor");
 	predecessorGui = new QTextEdit();
 	predecessorGui->setReadOnly(true);
-	predecessorGui->setMaximumHeight(50);
-	predecessorGui->setMaximumWidth(50);
+	predecessorGui->setMaximumHeight(40);
+	predecessorGui->setMaximumWidth(40);
 	
-
 	// Create the share file button
 	shareFileButton = new QPushButton("Share a File");
 
@@ -339,7 +338,7 @@ MessageSender::MessageSender()
 	QPushButton *shareFileButton = chat->getShareFileButton();
 	successor.first = 257;
 	predecessor.first = 257;
-	
+	rNearest.append(successor);
 	chat->getSuccessorGui()->append(QString::number(257));
 	chat->getPredecessorGui()->append(QString::number(257));
 
@@ -383,7 +382,7 @@ MessageSender::MessageSender()
 
 	fingerTableTimer->start(5000);
 
-	// stabilizeTimer->start(10000);
+	stabilizeTimer->start(10000);
 	// ********************************************************************************
 }
 
@@ -503,6 +502,10 @@ void MessageSender::updateTable() {
 // Slot method to update fingerTable
 void MessageSender::failureProtocol() {
 	qDebug() << "SHIT";
+	rNearest.removeFirst();
+	successor.first = rNearest[0].first;
+	successor.second.first = rNearest[0].second.first;
+	
 }
 
 

@@ -109,12 +109,12 @@ MultiLineEdit *ChatDialog::getTextLine() {
 }
 
 // Return the predecessor Gui
-QListWidget *ChatDialog::getPredecessorGui() {
+QTextEdit *ChatDialog::getPredecessorGui() {
 	return predecessorGui;
 }
 
 // Return the successor Gui
-QListWidget *ChatDialog::getSuccessorGui() {
+QTextEdit *ChatDialog::getSuccessorGui() {
 	return successorGui;
 }
 
@@ -339,6 +339,7 @@ MessageSender::MessageSender()
 	QPushButton *shareFileButton = chat->getShareFileButton();
 	successor.first = 257;
 	predecessor.first = 257;
+	
 	chat->getSuccessorGui()->append(QString::number(257));
 	chat->getPredecessorGui()->append(QString::number(257));
 

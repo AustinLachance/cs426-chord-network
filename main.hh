@@ -78,8 +78,8 @@ private:
 	MultiLineEdit *fileSearchLine;
 	MultiLineEdit *joinChordLine;
 	QListWidget *fileSearchResultsList;
-	QListWidget *successorGui;
-	QListWidget *predecessorGui;
+	QTextEdit *successorGui;
+	QTextEdit *predecessorGui;
 	QPushButton *shareFileButton;
 };
 
@@ -197,6 +197,7 @@ private:
 
 	QPair<int, QPair<QHostAddress, quint16>> successor;
 	QPair<int, QPair<QHostAddress, quint16>> predecessor;
+	QList<QPair<int, QPair<QHostAddress, quint16>>> rNearest;
 	QHash<QByteArray, QList<QByteArray>>* fingerTable;
 	QHash<QByteArray, QList<QByteArray>>* fileTable;
 

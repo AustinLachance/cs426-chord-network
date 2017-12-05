@@ -353,6 +353,8 @@ MessageSender::MessageSender()
 	
 	// Node predecessor did not respond in time. Remove it.
 	connect(predResponseTimer, SIGNAL(timeout()), this, SLOT(deadPredecessor()));
+	
+	stabilizeTimer->start(10000);
 	// ********************************************************************************
 }
 
@@ -378,6 +380,8 @@ bool MessageSender::createFingerTable() {
 
 // Run chord stabilization protocol
 void MessageSender::stabilizeNode() {
+	// Return if we aren't even in a chord network
+	if (successor.first == -1 && predecessor.first == -1) return;
 	QPair<QHostAddress, quint16> succInfo = this->successor.second;
 	qDebug() << "Stabilizing: checking if my successor is " << QString::number(this->successor.first);
 	// Request the predecessor of our successor
@@ -614,7 +618,7 @@ void MessageSender::onReceive()
 		else {
 			quint32 predID = predecessor.first;
 			QPair<QHostAddress, quint16> predInfo = predecessor.second;
-			
+			qDebug() << "Got a request for my predecessor, sending its info back to sender" << endl;
 			predReply.insert("predecessorReply", 1);
 			predReply.insert("nodeID", predID);
 			predReply.insert("nodeAddress", predInfo.first.toIPv4Address());

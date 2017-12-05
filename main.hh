@@ -29,6 +29,7 @@
 #include <QtCrypto/QtCrypto>
 #include <QDataStream>
 #include <QTable>
+#include <QTableWidgetItem>
 
 
 
@@ -67,7 +68,7 @@ public:
 	MultiLineEdit *getJoinChordLine();
 	QListWidget *getFileSearchResultsList();
 	QPushButton *getShareFileButton();
-	QPushButton *displayTable;
+	QPushButton *getDisplayTableButton();
 	QTextEdit *getPredecessorGui();
 	QTextEdit *getSuccessorGui();
 
@@ -79,7 +80,7 @@ private:
 	QTextEdit *successorGui;
 	QTextEdit *predecessorGui;
 	QPushButton *shareFileButton;
-	QPushButton *displayTable;
+	QPushButton *displayTableButton;
 };
 
 

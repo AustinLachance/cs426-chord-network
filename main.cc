@@ -31,7 +31,7 @@ ChatDialog::ChatDialog()
 	shareFileButton = new QPushButton("Share a File");
 	
 	// Create the share file button
-	displayTable = new QPushButton("Show Finger Table");
+	displayTableButton = new QPushButton("Show Finger Table");
 
 	//Join Chord text editor
 	joinChordLine = new MultiLineEdit();
@@ -84,6 +84,7 @@ ChatDialog::ChatDialog()
 	QVBoxLayout *nodeInfo = new QVBoxLayout();
 	nodeInfo->addLayout(predInfo);
 	nodeInfo->addLayout(succInfo);
+	nodeInfo->addWideth(displayTableButton);
 
 	QHBoxLayout *topLayout = new QHBoxLayout();
 	topLayout->addLayout(nodeInfo);
@@ -132,6 +133,11 @@ QListWidget *ChatDialog::getFileSearchResultsList() {
 // Return the share file button of the ChatDialog
 QPushButton *ChatDialog::getShareFileButton() {
 	return shareFileButton;
+}
+
+// Return the demo finger table button of the ChatDialog
+QPushButton *ChatDialog::getDisplayTableButton() {
+	return displayTableButton;
 }
 
 
@@ -348,6 +354,9 @@ MessageSender::MessageSender()
 
 	// User clicks the share file button
 	connect(shareFileButton, SIGNAL(clicked()), this, SLOT(openFileDialog()));
+	
+	// User clicks the display table button
+	connect(displayTableButton, SIGNAL(clicked()), this, SLOT(displayTable()));
 
 	// User selects a file(s) to share
 	connect(fileDialog, SIGNAL(filesSelected(const QStringList &)), this, SLOT(getFileMetadata(const QStringList &)));
@@ -512,6 +521,21 @@ void MessageSender::updateTable() {
 	// 	QByteArray updateFingerMsg = getSerialized(updateFingerMap);
 	// 	socket->writeDatagram(updateFingerMsg, this->successor.second.first, this->successor.second.second);
 	// }
+}
+
+// Slot method to display fingerTable
+void MessageSender::displayTable() {
+	visualTable->clear();
+	int start = 1;
+	for (int i = 0; i < 8; i++) {
+		QByteArray key = QByteArray::number((nodeID + start) % 256);
+		for (int j = 0; j < fingerTable[key].size(); j++) {
+			QTableWidgetItem t = QTableWidgetItem(fingerTable[key][j]);
+			visualTable->setItem(i, j, t);
+		}
+		start *= 2;
+	}
+	visualTable->show();
 }
 
 // Slot method to update fingerTable

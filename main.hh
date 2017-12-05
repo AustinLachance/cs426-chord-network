@@ -126,6 +126,18 @@ private:
 	quint16 port;
 };
 
+class TableDialog : public QDialog
+{
+  Q_OBJECT
+
+public:
+  TableDialog();
+  QTableWidget *getVisualTable();
+
+private:
+  QTableWidget *visualTable;
+};
+
 
 // Main window class containing a ChatDialog and NetSocket
 class MessageSender : public QMainWindow
@@ -209,6 +221,8 @@ private:
 
 	QTimer *fingerTableTimer;
 	QTimer *successorFailTimer;
+	
+	TableDialog *tableDialog;
 
 };
 

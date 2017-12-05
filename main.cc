@@ -258,6 +258,10 @@ MessageSender::MessageSender()
 	// Create instance of ChatDialog and show it
 	chat = new ChatDialog();
 	chat->show();
+	
+	// Create instance of TableDialog and hide it
+	tableDialog = new TableDialog();
+	tableDialog->hide();
 
 	// Create instance of NetSocket and bind it to UDP port
 	socket = new NetSocket();
@@ -535,7 +539,7 @@ void MessageSender::updateTable() {
 // Slot method to display fingerTable
 void MessageSender::displayTable() {
 	qDebug() << "Display slot";
-	QTableWidget *visualTable = chat->getVisualTable();
+	QTableWidget *visualTable = tableDialog->getVisualTable();
 	visualTable->clear();
 	int start = 1;
 	visualTable->setColumnCount(5);
@@ -1463,6 +1467,25 @@ void MessageSender::getFileMetadata(const QStringList &fileList) {
 		metadataMap.insert("metaFile", output);
 		fileMetadata.insert(hashedMetafile, metadataMap);
 	}
+}
+
+TableDialog::TableDialog()
+{
+	setWindowTitle("Finger Table");
+	
+	// Finger Table Demo
+	// Create and don't show visual table
+	visualTable = new QTableWidget(7, 5, this);
+
+	// Layout for table
+	QVBoxLayout *mainLayout = new QVBoxLayout();
+	mainLayout->addWidget(visualTable);
+
+	setLayout(mainLayout);
+}
+
+QTableWidget* TableDialog::getVisualTable() {
+	return visualTable;
 }
 
 

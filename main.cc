@@ -663,6 +663,7 @@ void MessageSender::onReceive()
 			receivedMap.insert("originAddress", senderAddress->toIPv4Address());
 			receivedMap.insert("originPort", *senderPort);
 		}
+		if ()
 		
 	}
 	
@@ -914,7 +915,7 @@ void MessageSender::onReceive()
 					QVariantMap storeFileMap;
 					storeFileMap.insert("store", 1);
 					storeFileMap.insert("fildID", fileID);
-					storeFileMap.insert("fileName", QString((*fileTable)[key][0].toString()));
+					storeFileMap.insert("fileName", QString((*fileTable)[key][0]));
 					socket->writeDatagram(getSerialized(storeFileMap), predecessor.second.first, predecessor.second.second);
 					fileTable->remove(key);
 					makeStoredFileGui();
@@ -1387,7 +1388,7 @@ void MessageSender::joinChord(QString input) {
 
 void MessageSender::makeStoredFileGui() {
 	for(auto key: (*fileTable).keys()) {
-		QString fileNameString = key.toString() + ":\t" + QString((*fileTable)[key][0].toString());
+		QString fileNameString = QString(key) + ":\t" + QString((*fileTable)[key][0]);
 		chat->getChordFileStore()->addItem(fileNameString);
 	}
 }

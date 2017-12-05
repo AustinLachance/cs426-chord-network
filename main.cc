@@ -503,8 +503,15 @@ void MessageSender::onReceive()
 	// If a new node receives its successor details
 	if (receivedMap.contains("nodeJoin") && receivedMap.contains("successorID")) {
 		successor.first = receivedMap["successorID"].toInt();
-		successor.second.first = QHostAddress(receivedMap["successorAddress"].toInt());
-		successor.second.second = receivedMap["successorPort"].toInt();
+		// If we are the first node to join a 1-chord node
+		if (receivedMap.contains("creator")) {
+			successor.second.first = *senderAddress;
+			successor.second.second = *senderPort;
+		}
+		else {
+			successor.second.first = QHostAddress(receivedMap["successorAddress"].toInt());
+			successor.second.second = receivedMap["successorPort"].toInt();
+		}
 		qDebug() << "My successor is " << QString::number(successor.first);
 		return;
 	}
@@ -544,7 +551,22 @@ void MessageSender::onReceive()
 	// If message is from a new node joining the chord, first check your own successors.
 	// else change message for your successors to find the new node's successor
 	else if (receivedMap.contains("nodeJoin")) {
-		if (findSuccessor(receivedMap["nodeJoin"].toInt())) {
+		// The creator node was finally joined by another node - make this node your successor and predecesssor - 2 node chord
+		if (successor.first == -1 && predecessor.first == -1) {
+			successor.first = receivedMap["nodeJoin"].toInt();
+			predecessor.first = receivedMap["nodeJoin"].toInt();
+			successor.second.first = *senderAddress;
+			successor.second.second = *senderPort;
+			predecessor.second.first = *senderAddress;
+			predecessor.second.second = *senderPort;
+			receivedMap.insert("successorID", nodeID);
+			// So the joining node knows to add you as its successor
+			receivedMap.insert("creator", -1);
+			QByteArray newNodeSuccessorMsg = getSerialized(receivedMap);
+			socket->writeDatagram(newNodeSuccessorMsg, *senderAddress, *senderPort);
+			return;
+		}
+		else if (findSuccessor(receivedMap["nodeJoin"].toInt())) {
 			//send our successor to the new node - i.e the sender
 			receivedMap.insert("successorID", successor.first);
 			receivedMap.insert("successorAddress", successor.second.first.toIPv4Address());

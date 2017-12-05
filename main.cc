@@ -632,7 +632,6 @@ void MessageSender::onReceive()
 		chat->getPredecessorGui()->clear();
 		chat->getPredecessorGui()->append(QString::number(predecessor.first));
 		successorFailTimer->stop();
-		checkPredTimer->stop();
 		predResponseTimer->stop();
 		return;
 	}
@@ -790,7 +789,6 @@ void MessageSender::onReceive()
 		|| (predecessor.first < tempNodeID && tempNodeID > nodeID && predecessor.first > nodeID)) {
 			chat->getPredecessorGui()->clear();
 			chat->getPredecessorGui()->append(QString::number(tempNodeID));
-			checkPredTimer->stop();
 			predResponseTimer->stop();
 			this->predecessor = tempNode;
 		}

@@ -507,7 +507,7 @@ void MessageSender::updateTable() {
 // Slot method to update fingerTable
 void MessageSender::failureProtocol() {
 	qDebug() << "SHIT";
-	if (!rNearest.size() || rNearest.first == 257) return;
+	if (!rNearest.size() || rNearest[0].first == 257) return;
 	rNearest.removeFirst();
 	if (!rNearest.size()) return;
 	successor.first = rNearest[0].first;

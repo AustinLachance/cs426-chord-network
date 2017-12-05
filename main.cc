@@ -672,6 +672,8 @@ void MessageSender::onReceive()
 	
 	// If we are responsible for this file, add it to our file table
 	if (receivedMap.contains("store") && receivedMap.contains("fileID")) {
+		qDebug() << "Got a store file" << endl;
+		
 		QList<QByteArray> fileEntry;
 		QString fileName = receivedMap["fileName"].toString();
 		QString fileID = QString::number(receivedMap["fileID"].toInt());

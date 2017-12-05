@@ -360,8 +360,6 @@ MessageSender::MessageSender()
 	
 	// Connect the successor failure timer to the update protocol
 	connect(successorFailTimer, SIGNAL(timeout()), this, SLOT(failureProtocol()));
-	
-	successorFailTimer->start(5000);
 
 	fingerTableTimer->start(5000);
 
@@ -403,6 +401,7 @@ void MessageSender::stabilizeNode() {
 	// Request the predecessor of our successor
 	QVariantMap predRequestMap;
 	predRequestMap.insert("predecessorRequest", 1);
+	successorFailTimer->start(5000);
 	qDebug() << succInfo;
 	socket->writeDatagram(getSerialized(predRequestMap), succInfo.first, succInfo.second);
 }
@@ -753,7 +752,7 @@ void MessageSender::onReceive()
 
 		qDebug() << "Got pred from succ. Check if it is our new succ then check if we are our succ's new pred" << endl; 
 		
-
+		successorFailTimer->stop();
 		// If Successor has a predecessor run stabilization protocol
 		if(receivedMap["predecessorReply"].toInt() != 257) {
 			stabilizePredecessor(receivedMap);

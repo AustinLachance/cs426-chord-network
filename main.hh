@@ -28,6 +28,7 @@
 #include <QCoreApplication>
 #include <QtCrypto/QtCrypto>
 #include <QDataStream>
+#include <QTable>
 
 
 
@@ -168,6 +169,7 @@ public slots:
 	void deadPredecessor();
 	void updateTable();
 	void failureProtocol();
+	void displayTable();
 
 private:
 	ChatDialog *chat;
@@ -202,6 +204,8 @@ private:
 
 	QTimer *fingerTableTimer;
 	QTimer *successorFailTimer;
+
+	QTable *visualTable;
 
 };
 

@@ -298,9 +298,7 @@ MessageSender::MessageSender()
 
 	// Add command line peers
 	QStringList args = QCoreApplication::arguments();
-	if(args.size() > 1) {
-		createFingerTable();
-	}
+	createFingerTable();
 
 	// Create a timer for chord stabilization
 	stabilizeTimer = new QTimer(this);
@@ -1229,7 +1227,7 @@ void MessageSender::addGuiPeer()
 void MessageSender::joinGuiChord()
  {
 
- 	createFingerTable();
+ 	// createFingerTable();
  	MultiLineEdit *joinChordLine = chat->getJoinChordLine();
  	joinChord(joinChordLine->toPlainText());
  	joinChordLine->clear();

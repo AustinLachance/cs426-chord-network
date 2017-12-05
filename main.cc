@@ -36,7 +36,7 @@ ChatDialog::ChatDialog()
 	// Finger Table Demo
 	//Create and don't show visual table
 	visualTable = new QTableWidget(7, 5, this);
-	visualTabel->hide();
+	visualTable->hide();
 
 	//Join Chord text editor
 	joinChordLine = new MultiLineEdit();

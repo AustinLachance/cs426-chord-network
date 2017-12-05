@@ -419,12 +419,28 @@ void MessageSender::stabilizePredecessor(QVariantMap map) {
 
 	QPair<int, QPair<QHostAddress, quint16>> tempNode(tempNodeID, tempNodeInfo);
 
-	// Node has been inserted between us and our old successor. Make this node new successor
+	// new node has been inserted between us and our old successor. Make this node new successor, make our old successor the secondSucessor
 	if((this->nodeID < tempNodeID && tempNodeID < succID) || (this->nodeID > tempNodeID && tempNodeID < succID && succID < nodeID)
 	|| (this->nodeID < tempNodeID && tempNodeID > succID && succID < nodeID)) {
 		chat->getSuccessorGui()->clear();
 		chat->getSuccessorGui()->append(QString::number(tempNodeID));
+		QPair<int, QPair<QHostAddress, quint16>> oldSuccessor = this->successor;
 		this->successor = tempNode;
+		rNearest.clear();
+		rNearest.append(this->successor);
+		rNearest.append(oldSuccessor);
+	}
+	
+	// new node is not within us and our old successor. Update our secondSuccessor to be our successor's successor 
+	else {
+		int nextSuccessorID = map["nextSuccessorID"].toInt();
+		QPair<QHostAddress, quint16> nextSuccessorInfo;
+		nextSuccessorInfo.first = QHostAddress(map["nextSuccessorAddress"].toInt());
+		nextSuccessor.second = map["nextSuccessorPort"].toInt();
+		QPair<int, QPair<QHostAddress, quint16>> nextSuccessorNode(nextSuccessorID, nextSuccessorInfo);
+		rNearest.clear();
+		rNearest.append(this->successor);
+		rNearest.append(nextSuccessorNode)
 	}
 }
 
@@ -710,8 +726,11 @@ void MessageSender::onReceive()
 			predReply.insert("nodeID", predID);
 			predReply.insert("nodeAddress", predInfo.first.toIPv4Address());
 			predReply.insert("nodePort", predInfo.second);
+			predReply.insert("nextSuccessorID", successor.first);
+			predReply.insert("nextSuccessorAddress", successor.second.first.toIPv4Address());
+			predReply.insert("nextSuccessorPort", successor.second.second);
 		}
-		qDebug() << "I am sending my predecessor back to the sender/potential predecessor";
+		qDebug() << "I am sending my predecessor AND successor back to the sender/potential predecessor";
 		socket->writeDatagram(getSerialized(predReply), *senderAddress, *senderPort);
 	}
 

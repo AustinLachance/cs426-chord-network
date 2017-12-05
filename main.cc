@@ -33,11 +33,16 @@ ChatDialog::ChatDialog()
 	// Create the share file button
 	displayTableButton = new QPushButton("Show Finger Table");
 
-	//Join Chord text editor
+	// Join Chord text editor
 	joinChordLine = new MultiLineEdit();
 	joinChordLine->setMaximumHeight(50);
 	QLabel* chordLabel = new QLabel();
 	chordLabel->setText("Join a peer's chord with host:port");
+	
+	// Search file text editor
+	searchFileLine = new MultiLineEdit();
+	searchFileLine->setMaximumHeight(40);
+	QLabel* searchFileLabel = new QLabel("Search for a file by ID");
 
 	// Download File text editor
 	downloadFileLine = new MultiLineEdit();
@@ -65,6 +70,8 @@ ChatDialog::ChatDialog()
 	QVBoxLayout *editingLayout = new QVBoxLayout();
 	editingLayout->addWidget(chordLabel);
 	editingLayout->addWidget(joinChordLine);
+	editingLayout->addWidget(searchFileLabel);
+	editingLayout->addWidget(searchFileLine);
 
 	QHBoxLayout *bottomLayout = new QHBoxLayout();
 	bottomLayout->addLayout(editingLayout);
@@ -356,6 +363,9 @@ MessageSender::MessageSender()
 
 	// User presses return after entering a "host:port" to join a peer's chord
 	connect(joinChordLine, SIGNAL(returnPressed()), this, SLOT(joinGuiChord()));
+	
+	// User enters a file ID to search for
+	connect(searchFileLine, SIGNAL(returnPressed()), this, SLOT(searchChordFile()));
 
 	// User presses return after entering a "targetNodeID:hexDataHash" to download a file
 	connect(downloadFileLine, SIGNAL(returnPressed()), this, SLOT(downloadFile()));
@@ -636,6 +646,20 @@ void MessageSender::onReceive()
 		return;
 	}
 	
+	// We got the search result for a file (node or not present)
+	if (receivedMap.contains("fileSearch") && receivedMap["fileSearch"].toInt() == nodeID) {
+		qDebug() << "lol";
+	}
+	
+	// We are searching for a file
+	else if (receivedMap.contains("fileSearch")) {
+		if (!receivedMap.contains("originAddress")) {
+			receivedMap.insert("originAddress", senderAddress->toIPv4Address());
+			receivedMap.insert("originPort", *senderPort);
+		}
+		
+	}
+	
 	// If we are responsible for this file, add it to our file table
 	if (receivedMap.contains("store") && receivedMap.contains("fileID")) {
 		QList<QByteArray> fileEntry;
@@ -875,6 +899,22 @@ void MessageSender::onReceive()
 			chat->getPredecessorGui()->append(QString::number(tempNodeID));
 			predResponseTimer->stop();
 			this->predecessor = tempNode;
+			
+			// Check whether chord files should be transferred to predecessor
+			for(auto key: (*fileTable).keys()) {
+				quint32 fileID = key.toInt();
+				if((predecessor.first >= fileID && predecessor.first < nodeID) || ( predecessor.first >= fileID && fileID > nodeID) ||
+				(predecessor.first <= fileID && nodeID < fileID && nodeID > predecessor.first)) {
+					QVariantMap storeFileMap;
+					storeFileMap.insert("store", 1);
+					storeFileMap.insert("fildID", fileID);
+					storeFileMap.insert("fileName", QString((*fileTable)[key][0].toString()));
+					socket->writeDatagram(getSerialized(storeFileMap, predecessor.second.first, predecessor.second.second));
+					fileTable.remove(key);
+					makeStoredFileGui();
+				}
+				
+			}
 		}
 		else {
 			qDebug() << "Nope. Not my predecessor" << endl;
@@ -1339,6 +1379,13 @@ void MessageSender::joinChord(QString input) {
 	}
 }
 
+void makeStoredFileGui() {
+	for(auto key: (*fileTable).keys()) {
+		QString fileNameString = key.toString() + ":\t" + QString((*fileTable)[key][0].toString());
+		chat->getChordFileStore()->addItem(fileNameString);
+	}
+}
+
 
 // Attempt to download a file using input as targetNodeID:hexadecimalBlocklistHash
 void MessageSender::downloadFile() {
@@ -1369,6 +1416,19 @@ void MessageSender::joinGuiChord()
  	MultiLineEdit *joinChordLine = chat->getJoinChordLine();
  	joinChord(joinChordLine->toPlainText());
  	joinChordLine->clear();
+ }
+ 
+ // Slot to trigger searching for a file
+void MessageSender::searchChordFile()
+ {
+ 	// createFingerTable();
+ 	MultiLineEdit *searchFileLine = chat->getSearchFileLine();
+ 	QString fileID = searchFileLine->toPlainText();
+ 	searchFileLine->clear();
+ 	QVariantMap fileSearch;
+ 	fileSearch.insert("fileSearch", nodeID);
+ 	fileSearch.insert("updateNode", fileID.toInt());
+ 	socket->writeDatagram(getSerialized(fileSearch), successor.second.first, successor.second.second);
  }
 
 

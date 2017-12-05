@@ -66,6 +66,7 @@ public:
 	MultiLineEdit *getDownloadFileLine();
 	MultiLineEdit *getFileSearchLine();
 	MultiLineEdit *getJoinChordLine();
+	MultiLineEdit *getSearchFileLine();
 	QListWidget *getFileSearchResultsList();
 	QListWidget *getChordFileStore();
 	QPushButton *getShareFileButton();
@@ -77,6 +78,7 @@ private:
 	MultiLineEdit *downloadFileLine;
 	MultiLineEdit *fileSearchLine;
 	MultiLineEdit *joinChordLine;
+	MultiLineEdit *searchFileLine;
 	QListWidget *fileSearchResultsList;
 	QListWidget *chordFileStore;
 	QTextEdit *successorGui;
@@ -171,6 +173,7 @@ public:
 	QByteArray findClosestPredecessor(quint32 newNode);
 	void joinChord(QString input);
 	void handleFindSuccessor(QVariantMap receivedMap);
+	void makeStoredFileGui();
 
 
 public slots:
@@ -178,6 +181,7 @@ public slots:
 	void peerLookup(QHostInfo host);
 	void chordLookup(QHostInfo host);
 	void joinGuiChord();
+	void searchChordFile();
 	void startFileDownload(QListWidgetItem * listItem);
 	void openFileDialog();
 	void getFileMetadata(const QStringList &fileList);
@@ -188,6 +192,7 @@ public slots:
 	void updateTable();
 	void failureProtocol();
 	void displayTable();
+	
 
 private:
 	ChatDialog *chat;

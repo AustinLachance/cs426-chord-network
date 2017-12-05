@@ -29,6 +29,9 @@ ChatDialog::ChatDialog()
 	
 	// Create the share file button
 	shareFileButton = new QPushButton("Share a File");
+	
+	// Create the share file button
+	displayTable = new QPushButton("Show Finger Table");
 
 	//Join Chord text editor
 	joinChordLine = new MultiLineEdit();

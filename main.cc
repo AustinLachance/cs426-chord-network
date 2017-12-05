@@ -535,7 +535,7 @@ void MessageSender::updateTable() {
 // Slot method to display fingerTable
 void MessageSender::displayTable() {
 	qDebug() << "Display slot";
-	QTableWidget visualTable = chat->getVisualTable();
+	QTableWidget *visualTable = chat->getVisualTable();
 	visualTable->clear();
 	int start = 1;
 	for (int i = 0; i < 8; i++) {

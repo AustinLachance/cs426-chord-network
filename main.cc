@@ -466,10 +466,10 @@ void MessageSender::checkPredecessor() {
 		checkMap.insert("predecessorStatusRequest", 1);
 
 		socket->writeDatagram(getSerialized(checkMap), predInfo.first, predInfo.second);
+		
+		// Wait 5 seconds for a response
+		predResponseTimer->start(5000);
 	}
-
-	// Wait 5 seconds for a response
-	predResponseTimer->start(5000);
 }
 
 

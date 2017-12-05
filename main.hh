@@ -169,6 +169,7 @@ public slots:
 	void stabilizeNode();
 	void checkPredecessor();
 	void deadPredecessor();
+	void updateTable();
 
 private:
 	ChatDialog *chat;
@@ -188,15 +189,17 @@ private:
 	QByteArray fileBuilder;
 	QString currentSearch;
 	QVariantMap searchResultsMap;
-	
+
 	QPair<int, QPair<QHostAddress, quint16>> successor;
 	QPair<int, QPair<QHostAddress, quint16>> predecessor;
 	QHash<QByteArray, QList<QByteArray>>* fingerTable;
 	QHash<QByteArray, QList<QByteArray>>* fileTable;
-	
+
 	QTimer *stabilizeTimer;
 	QTimer *checkPredTimer;
 	QTimer *predResponseTimer;
+
+	QTimer *fingerTableTimer;
 
 };
 

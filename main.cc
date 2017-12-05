@@ -32,11 +32,6 @@ ChatDialog::ChatDialog()
 	
 	// Create the share file button
 	displayTableButton = new QPushButton("Show Finger Table");
-	
-	// Finger Table Demo
-	//Create and don't show visual table
-	visualTable = new QTableWidget(7, 5, this);
-	visualTable->hide();
 
 	//Join Chord text editor
 	joinChordLine = new MultiLineEdit();
@@ -90,7 +85,6 @@ ChatDialog::ChatDialog()
 	nodeInfo->addLayout(predInfo);
 	nodeInfo->addLayout(succInfo);
 	nodeInfo->addWidget(displayTableButton);
-	nodeInfo->addWidget(visualTable);
 
 	QHBoxLayout *topLayout = new QHBoxLayout();
 	topLayout->addLayout(nodeInfo);
@@ -116,11 +110,6 @@ QTextEdit *ChatDialog::getSuccessorGui() {
 // Return the join Chord text line of the ChatDialog
 MultiLineEdit *ChatDialog::getJoinChordLine() {
 	return joinChordLine;
-}
-
-// Return the visual table to diplay finger table
-QTableWidget *ChatDialog::getVisualTable() {
-	return visualTable;
 }
 
 
@@ -554,7 +543,7 @@ void MessageSender::displayTable() {
 		}
 		start *= 2;
 	}
-	visualTable->show();
+	tableDialog->show();
 }
 
 // Slot method to update fingerTable

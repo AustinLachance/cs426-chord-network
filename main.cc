@@ -67,7 +67,9 @@ ChatDialog::ChatDialog()
 
 
 	QVBoxLayout *nodeInfo = new QVBoxLayout();
+	nodeInfo->addWidget(predecessorLabel);
 	nodeInfo->addWidget(predecessorGui);
+	nodeInfo->addWidget(successorLabel);
 	nodeInfo->addWidget(successorGui);
 	
 	QHBoxLayout *topLayout = new QHBoxLayout();
@@ -494,7 +496,7 @@ void MessageSender::updateTable() {
 
 // Slot method to update fingerTable
 void MessageSender::failureProtocol() {
-	
+	qDebug() << "SHIT";
 }
 
 

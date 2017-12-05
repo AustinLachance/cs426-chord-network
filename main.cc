@@ -1101,7 +1101,7 @@ QByteArray MessageSender::findClosestPredecessor(quint32 newNode) {
 		qDebug() << fingerKey;
 		quint32 successorID = (*fingerTable)[fingerKey][2].toInt();
 		if (successorID != 257 && ((nodeID < successorID && successorID < newNode) || (nodeID < successorID && successorID > newNode && newNode < nodeID)
-		|| (nodeID > successorID && successorID < newNode && newNode > nodeID))) {
+		|| (nodeID > successorID && successorID < newNode && newNode < nodeID))) {
 			return fingerKey;
 		}
 		i /= 2;

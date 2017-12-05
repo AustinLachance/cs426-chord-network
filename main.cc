@@ -913,7 +913,7 @@ void MessageSender::onReceive()
 			// Check whether chord files should be transferred to predecessor
 			for(auto key: (*fileTable).keys()) {
 				quint32 fileID = key.toInt();
-				if((predecessor.first >= fileID && predecessor.first < nodeID) || ( predecessor.first >= fileID && fileID > nodeID) ||
+				if((predecessor.first >= fileID && predecessor.first < nodeID) || ( predecessor.first >= fileID && predecessor.first > nodeID && fileID > nodeID) ||
 				(predecessor.first <= fileID && nodeID < fileID && nodeID > predecessor.first)) {
 					qDebug() << "File transferring to Predecessor" << endl;
 					qDebug() << QString::number(fileID) << endl;

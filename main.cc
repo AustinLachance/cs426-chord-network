@@ -329,8 +329,8 @@ MessageSender::MessageSender()
 	QPushButton *shareFileButton = chat->getShareFileButton();
 	successor.first = 257;
 	predecessor.first = 257;
-	chat->getSuccessor()->addItem(QString::number(257));
-	chat->getPredecessor()->addItem(QString::number(257));
+	chat->getSuccessorGui()->addItem(QString::number(257));
+	chat->getPredecessorGui()->addItem(QString::number(257));
 
 	// ******** Signal->Slot connections ************************************************
 
@@ -773,8 +773,8 @@ void MessageSender::onReceive()
 		// If predecessor doesn't exist or tempNode falls btw old predecessor and us then update
 		if((predecessor.first == 257) || (tempNodeID > predecessor.first && tempNodeID < nodeID) || (predecessor.first > tempNodeID && tempNodeID < nodeID && nodeID < predecessor.first)
 		|| (predecessor.first < tempNodeID && tempNodeID > nodeID && predecessor.first > nodeID)) {
-			chat->getPredecessor()->clear();
-			chat->getPredecessor()->addItem(QString::number(tempNodeID));
+			chat->getPredecessorGui()->clear();
+			chat->getPredecessorGui()->addItem(QString::number(tempNodeID));
 			this->predecessor = tempNode;
 		}
 		else {

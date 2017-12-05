@@ -596,6 +596,10 @@ void MessageSender::onReceive()
 			successor.second.second = receivedMap["successorPort"].toInt();
 		}
 		qDebug() << "My successor is " << QString::number(successor.first);
+		chat->getSuccessorGui()->clear();
+		chat->getSuccessorGui()->append(QString::number(successor.first));
+		chat->getPredecessorGui()->clear();
+		chat->getPredecessorGui()->append(QString::number(predecessor.first));
 		return;
 	}
 	// If a chord node receives a forwarded message to find a new node's successor
@@ -646,7 +650,10 @@ void MessageSender::onReceive()
 			QByteArray newNodeSuccessorMsg = getSerialized(receivedMap);
 			qDebug() << "My successor " << successor;
 			qDebug() << "My predecessor " << predecessor;
-
+			chat->getPredecessorGui()->clear();
+			chat->getPredecessorGui()->append(QString::number(receivedMap["updateNode"].toInt()));
+			chat->getSuccessorGui()->clear();
+			chat->getSuccessorGui()->append(QString::number(receivedMap["updateNode"].toInt()));
 			socket->writeDatagram(newNodeSuccessorMsg, *senderAddress, *senderPort);
 			return;
 		}

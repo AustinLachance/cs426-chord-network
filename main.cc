@@ -679,7 +679,7 @@ void MessageSender::onReceive()
 		QString fileID = QString::number(receivedMap["fileID"].toInt());
 		QByteArray byteName = QByteArray();
 		byteName.append(fileName);
-		qDebug() << byteName.toString();
+		qDebug() << byteName;
 		fileEntry.append(byteName);
 		fileTable->insert(QByteArray::number(receivedMap["fileID"].toInt()), fileEntry);
 		qDebug() << "Currently housed files";

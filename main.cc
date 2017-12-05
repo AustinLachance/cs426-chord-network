@@ -590,13 +590,13 @@ void MessageSender::onReceive()
 			socket->writeDatagram(newNodeSuccessorMsg, QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
 			return;
 		}
-	else {
-		receivedMap.remove("findSuccessor");
-		receivedMap.insert("findClosestPredecessor", 1);
-		QByteArray findClosestPredMsg = getSerialized(receivedMap);
-		socket->writeDatagram(findClosestPredMsg, successor.second.first, successor.second.second);
-		return;
-	}
+		else {
+			receivedMap.remove("findSuccessor");
+			receivedMap.insert("findClosestPredecessor", 1);
+			QByteArray findClosestPredMsg = getSerialized(receivedMap);
+			socket->writeDatagram(findClosestPredMsg, successor.second.first, successor.second.second);
+			return;
+		}
 
 	}
 	// If a chord node receives a forwarded message to find its closest predecessor to a new node
@@ -1072,7 +1072,7 @@ QVariantMap MessageSender::createBlockRequest(QString dest, QString origin, QByt
 bool MessageSender::findSuccessor(quint32 newNode) {
 	// The node's successor is this current node's successor
 	if (successor.first != 257 && ((nodeID < newNode && newNode < successor.first) || (nodeID < newNode && newNode > successor.first && successor.first < nodeID)
-	|| (nodeID > newNode && newNode < successor.first && nodeID < successor.first))) {
+	|| (nodeID > newNode && newNode < successor.first && nodeID > successor.first))) {
 		qDebug() << "At node " << QString::number(nodeID) << ", " << QString::number(newNode) << "'s successor is " << QString::number(successor.first);
 		return true;
 	}

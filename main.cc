@@ -564,7 +564,7 @@ void MessageSender::onReceive()
 			for (auto i = fingerTable->begin(); i != fingerTable->end(); i++) {
 				qDebug() << i.key() << i.value() << endl;
 			}
-			fingerTableTimer->stop();
+			// fingerTableTimer->stop();
 			entryNum = 1;
 			updateNum = (nodeID + 1) % 256;
 		}

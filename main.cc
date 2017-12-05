@@ -457,7 +457,7 @@ void MessageSender::deadPredecessor() {
 // Slot method to update fingerTable
 void MessageSender::updateTable() {
 	// May have to stop all the other timers right quick
-
+	qDebug() << QString::number(entryNum) << "  " << QString::number(updateNum);
 	// Don't do anything if we don't have a successor/predecessor
 	if (entryNum != 1 && (nodeID + entryNum) % 256 > updateNum) return;
 	if (successor.first == 257 && predecessor.first == 257) return;

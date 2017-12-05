@@ -32,6 +32,11 @@ ChatDialog::ChatDialog()
 	
 	// Create the share file button
 	displayTableButton = new QPushButton("Show Finger Table");
+	
+	// Finger Table Demo
+	//Create and don't show visual table
+	visualTable = new QTableWidget(7, 5, this);
+	visualTabel->hide();
 
 	//Join Chord text editor
 	joinChordLine = new MultiLineEdit();
@@ -85,6 +90,7 @@ ChatDialog::ChatDialog()
 	nodeInfo->addLayout(predInfo);
 	nodeInfo->addLayout(succInfo);
 	nodeInfo->addWidget(displayTableButton);
+	nodeInfo->addWidget(visualTable);
 
 	QHBoxLayout *topLayout = new QHBoxLayout();
 	topLayout->addLayout(nodeInfo);
@@ -110,6 +116,11 @@ QTextEdit *ChatDialog::getSuccessorGui() {
 // Return the join Chord text line of the ChatDialog
 MultiLineEdit *ChatDialog::getJoinChordLine() {
 	return joinChordLine;
+}
+
+// Return the visual table to diplay finger table
+QTableWidget *ChatDialog::getVisualTable() {
+	return visualTable;
 }
 
 
@@ -280,9 +291,6 @@ MessageSender::MessageSender()
 
 	//Create a chord fileTable - id maps to all the blocks of a file
 	fileTable = new QHash<QByteArray, QList<QByteArray>>();
-
-	//Create and don't show visual table
-	visualTable = new QTableWidget(7, 5, this);
 
 	// Create a unique ID for this instance of MessageSender
 	qint64 seedVal = QDateTime::currentMSecsSinceEpoch();
@@ -526,6 +534,8 @@ void MessageSender::updateTable() {
 
 // Slot method to display fingerTable
 void MessageSender::displayTable() {
+	qDebug() << "Display slot";
+	QTableWidget visualTable = chat->getVisualTable();
 	visualTable->clear();
 	int start = 1;
 	for (int i = 0; i < 8; i++) {

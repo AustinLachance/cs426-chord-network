@@ -71,6 +71,7 @@ public:
 	QPushButton *getDisplayTableButton();
 	QTextEdit *getPredecessorGui();
 	QTextEdit *getSuccessorGui();
+	QTableWidget *getVisualTabel();
 
 private:
 	MultiLineEdit *downloadFileLine;
@@ -81,6 +82,7 @@ private:
 	QTextEdit *predecessorGui;
 	QPushButton *shareFileButton;
 	QPushButton *displayTableButton;
+	QTableWidget *visualTabel;
 };
 
 
@@ -207,8 +209,6 @@ private:
 
 	QTimer *fingerTableTimer;
 	QTimer *successorFailTimer;
-
-	QTableWidget *visualTable;
 
 };
 

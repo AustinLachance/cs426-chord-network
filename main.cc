@@ -1437,8 +1437,8 @@ void MessageSender::getFileMetadata(const QStringList &fileList) {
 		QCA::Hash shaHash("sha1");
 		
 		
-		QByteArray fileHash = QCA::Hash("sha1").hash(fileList[i].toLatin1()).toByteArray();
-		QDataStream fileStream(fileHash.right(2));
+		QByteArray uploadHash = QCA::Hash("sha1").hash(fileList[i].toLatin1()).toByteArray();
+		QDataStream fileStream(uploadHash.right(2));
 		fileStream.setByteOrder(QDataStream::BigEndian);
 		quint16 result;
 		fileStream >> result;

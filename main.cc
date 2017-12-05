@@ -84,7 +84,7 @@ ChatDialog::ChatDialog()
 	QVBoxLayout *nodeInfo = new QVBoxLayout();
 	nodeInfo->addLayout(predInfo);
 	nodeInfo->addLayout(succInfo);
-	nodeInfo->addWideth(displayTableButton);
+	nodeInfo->addWidget(displayTableButton);
 
 	QHBoxLayout *topLayout = new QHBoxLayout();
 	topLayout->addLayout(nodeInfo);
@@ -332,6 +332,7 @@ MessageSender::MessageSender()
 	MultiLineEdit* joinChordLine = chat->getJoinChordLine();
 	QListWidget *fileSearchResultsList = chat->getFileSearchResultsList();
 	QPushButton *shareFileButton = chat->getShareFileButton();
+	QPushButton *displayTableButton = chat->getDisplayTableButton();
 	successor.first = 257;
 	predecessor.first = 257;
 	rNearest.append(successor);
@@ -529,7 +530,7 @@ void MessageSender::displayTable() {
 	int start = 1;
 	for (int i = 0; i < 8; i++) {
 		QByteArray key = QByteArray::number((nodeID + start) % 256);
-		for (int j = 0; j < fingerTable[key].size(); j++) {
+		for (int j = 0; j < (*fingerTable)[key].size(); j++) {
 			QTableWidgetItem t = QTableWidgetItem(fingerTable[key][j]);
 			visualTable->setItem(i, j, t);
 		}

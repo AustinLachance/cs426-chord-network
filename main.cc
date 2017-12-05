@@ -282,7 +282,7 @@ MessageSender::MessageSender()
 	fileTable = new QHash<QByteArray, QList<QByteArray>>();
 
 	//Create and don't show visual table
-	visualTable = new QTable(7, 5, this);
+	visualTable = new QTableWidget(7, 5, this);
 
 	// Create a unique ID for this instance of MessageSender
 	qint64 seedVal = QDateTime::currentMSecsSinceEpoch();

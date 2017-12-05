@@ -28,7 +28,7 @@
 #include <QCoreApplication>
 #include <QtCrypto/QtCrypto>
 #include <QDataStream>
-#include <QTable>
+#include <QTableWidget>
 #include <QTableWidgetItem>
 
 
@@ -208,7 +208,7 @@ private:
 	QTimer *fingerTableTimer;
 	QTimer *successorFailTimer;
 
-	QTable *visualTable;
+	QTableWidget *visualTable;
 
 };
 

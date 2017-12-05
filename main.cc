@@ -610,6 +610,7 @@ void MessageSender::onReceive()
 		qDebug() << "supposed to find closest predecessor";
 		QByteArray closestPredecessor = findClosestPredecessor(receivedMap["updateNode"].toInt());
 		if (closestPredecessor.toInt() == nodeID) {
+			receivedMap.remove("findClosestPredecessor");
 			receivedMap.insert("findSuccessor", 1);
 			handleFindSuccessor(receivedMap);
 			return;
@@ -1095,9 +1096,10 @@ QByteArray MessageSender::findClosestPredecessor(quint32 newNode) {
 	int i = 128;
 	while (i >= 1) {
 		QByteArray fingerKey = QByteArray::number((nodeID + i) % 256);
+		qDebug() << fingerKey;
 		quint32 successorID = (*fingerTable)[fingerKey][2].toInt();
-		if (successorID != 257 && ((nodeID < successorID && successorID < newNode) || (nodeID < successorID && successorID > newNode)
-		|| (nodeID > successorID && successorID < newNode))) {
+		if (successorID != 257 && ((nodeID < successorID && successorID < newNode) || (nodeID < successorID && successorID > newNode && newNode < nodeID)
+		|| (nodeID > successorID && successorID < newNode && newNode > nodeID))) {
 			return fingerKey;
 		}
 		i /= 2;

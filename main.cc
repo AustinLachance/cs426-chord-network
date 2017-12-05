@@ -475,6 +475,8 @@ void MessageSender::checkPredecessor() {
 void MessageSender::deadPredecessor() {
 	qDebug() << "My predecessor "<< QString::number(this->predecessor.first) << " is dead";
 	this->predecessor.first = 257;
+	chat->getPredecessorGui()->clear();
+	chat->getPredecessorGui()->append(QString::number(predecessor.first));
 	// Restart timer to check status of predecessor
 	checkPredTimer->start(10000);
 }
@@ -702,6 +704,7 @@ void MessageSender::onReceive()
 
 	// Node is requesting our status. Respond that we're alive
 	else if(receivedMap.contains("predecessorStatusRequest")) {
+		qDebug() << "Successor is requesting our status" << endl;
 		QVariantMap predStatusReply;
 		predStatusReply.insert("predecessorStatusReply", 1);
 		socket->writeDatagram(getSerialized(predStatusReply), *senderAddress, *senderPort);
@@ -709,7 +712,7 @@ void MessageSender::onReceive()
 
 	// Got a reply to predecessor check. Predecessor is still alive
 	else if(receivedMap.contains("predecessorStatusReply")) {
-
+		qDebug() << "Predecessor is still alive!" << endl;
 		// Stop the predResponseTimer since we got a reply
 		this->predResponseTimer->stop();
 

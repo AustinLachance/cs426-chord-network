@@ -401,6 +401,7 @@ void MessageSender::stabilizeNode() {
 	// Request the predecessor of our successor
 	QVariantMap predRequestMap;
 	predRequestMap.insert("predecessorRequest", 1);
+	qDebug() << succInfo;
 	socket->writeDatagram(getSerialized(predRequestMap), succInfo.first, succInfo.second);
 }
 
@@ -685,7 +686,7 @@ void MessageSender::onReceive()
 		else {
 			quint32 predID = predecessor.first;
 			QPair<QHostAddress, quint16> predInfo = predecessor.second;
-			qDebug() << "Got a request for my predecessor sending my pred " << QString(predID) << endl;
+			qDebug() << "Got a request for my predecessor  sending my pred " << QString(predID) << endl;
 			predReply.insert("predecessorReply", 1);
 			predReply.insert("nodeID", predID);
 			predReply.insert("nodeAddress", predInfo.first.toIPv4Address());

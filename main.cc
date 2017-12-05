@@ -915,6 +915,8 @@ void MessageSender::onReceive()
 				quint32 fileID = key.toInt();
 				if((predecessor.first >= fileID && predecessor.first < nodeID) || ( predecessor.first >= fileID && fileID > nodeID) ||
 				(predecessor.first <= fileID && nodeID < fileID && nodeID > predecessor.first)) {
+					qDebug() << "File transferring to Predecessor" << endl;
+					qDebug() << QString::number(fileID) < endl;
 					QVariantMap storeFileMap;
 					storeFileMap.insert("store", 1);
 					storeFileMap.insert("fildID", fileID);
@@ -1390,6 +1392,7 @@ void MessageSender::joinChord(QString input) {
 }
 
 void MessageSender::makeStoredFileGui() {
+	qDebug() << "Updating list of files GUI" << endl;
 	for(auto key: (*fileTable).keys()) {
 		QString fileNameString = QString(key) + ":\t" + QString((*fileTable)[key][0]);
 		chat->getChordFileStore()->addItem(fileNameString);
@@ -1559,44 +1562,44 @@ void MessageSender::getFileMetadata(const QStringList &fileList) {
 	        continue;
 	    }
 	    
-	    QDataStream in(&file);
-	    int bytesRead;
-	    int totalBytes = 0;
-	    char *dataStore = (char *)calloc(8000, 1);
+	//     QDataStream in(&file);
+	//     int bytesRead;
+	//     int totalBytes = 0;
+	//     char *dataStore = (char *)calloc(8000, 1);
 
-	    do {
-	    	bytesRead = in.readRawData(dataStore, 8000);
-	    	QByteArray hashVal = QCA::Hash("sha1").hash(dataStore).toByteArray();
+	//     do {
+	//     	bytesRead = in.readRawData(dataStore, 8000);
+	//     	QByteArray hashVal = QCA::Hash("sha1").hash(dataStore).toByteArray();
 
-	    	// add hash and block to the fileHash table
-	    	if(fileHash.contains(hashVal)) {
-	    		QVariantList hashValList;
-	    		hashValList.append(fileHash[hashVal].toByteArray());
-	    		hashValList.append(dataStore);
-	    		fileHash[hashVal] = hashValList;
-	    	}
-	    	else {
-	    		fileHash[hashVal] = dataStore;
-	    	}
+	//     	// add hash and block to the fileHash table
+	//     	if(fileHash.contains(hashVal)) {
+	//     		QVariantList hashValList;
+	//     		hashValList.append(fileHash[hashVal].toByteArray());
+	//     		hashValList.append(dataStore);
+	//     		fileHash[hashVal] = hashValList;
+	//     	}
+	//     	else {
+	//     		fileHash[hashVal] = dataStore;
+	//     	}
 
-	    	qDebug() << "Hashing " << hashVal.toHex() << endl << "TO" << fileHash[hashVal].toByteArray() << endl;
+	//     	qDebug() << "Hashing " << hashVal.toHex() << endl << "TO" << fileHash[hashVal].toByteArray() << endl;
 
-	    	// Append to hash metafile
- 	    	output.append(hashVal);
-	    	totalBytes += bytesRead;
-		}
-		while(bytesRead == 8000);
+	//     	// Append to hash metafile
+ //	    	output.append(hashVal);
+	//     	totalBytes += bytesRead;
+	// 	}
+	// 	while(bytesRead == 8000);
 
-		QByteArray hashedMetafile = QCA::Hash("sha1").hash(output).toByteArray();
-		qDebug() << hashedMetafile.toHex() << endl;
+	// 	QByteArray hashedMetafile = QCA::Hash("sha1").hash(output).toByteArray();
+	// 	qDebug() << hashedMetafile.toHex() << endl;
 
-		// Insert the metadata into the fileMetadata table
-		QVariantMap metadataMap;
-		metadataMap.insert("fileName", fileList[i]);
-		metadataMap.insert("fileSize", totalBytes);
-		metadataMap.insert("metaFile", output);
-		fileMetadata.insert(hashedMetafile, metadataMap);
-	}
+	// 	// Insert the metadata into the fileMetadata table
+	// 	QVariantMap metadataMap;
+	// 	metadataMap.insert("fileName", fileList[i]);
+	// 	metadataMap.insert("fileSize", totalBytes);
+	// 	metadataMap.insert("metaFile", output);
+	// 	fileMetadata.insert(hashedMetafile, metadataMap);
+	// }
 }
 
 

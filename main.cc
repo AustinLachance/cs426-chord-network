@@ -18,7 +18,7 @@ ChatDialog::ChatDialog()
 	successorGui->setReadOnly(true);
 	successorGui->setMaximumHeight(40);
 	successorGui->setMaximumWidth(40);
-	
+
 	// // Predecessor
 	QLabel *predecessorLabel = new QLabel();
 	predecessorLabel->setText("Predecessor");
@@ -26,7 +26,7 @@ ChatDialog::ChatDialog()
 	predecessorGui->setReadOnly(true);
 	predecessorGui->setMaximumHeight(40);
 	predecessorGui->setMaximumWidth(40);
-	
+
 	// Create the share file button
 	shareFileButton = new QPushButton("Share a File");
 	
@@ -76,15 +76,15 @@ ChatDialog::ChatDialog()
 	QHBoxLayout *predInfo = new QHBoxLayout();
 	predInfo->addWidget(predecessorLabel);
 	predInfo->addWidget(predecessorGui);
-	
+
 	QHBoxLayout *succInfo = new QHBoxLayout();
 	succInfo->addWidget(successorLabel);
 	succInfo->addWidget(successorGui);
-	
+
 	QVBoxLayout *nodeInfo = new QVBoxLayout();
 	nodeInfo->addLayout(predInfo);
 	nodeInfo->addLayout(succInfo);
-	
+
 	QHBoxLayout *topLayout = new QHBoxLayout();
 	topLayout->addLayout(nodeInfo);
 	topLayout->addLayout(fileLayout);
@@ -275,6 +275,9 @@ MessageSender::MessageSender()
 	//Create a chord fileTable - id maps to all the blocks of a file
 	fileTable = new QHash<QByteArray, QList<QByteArray>>();
 
+	//Create and don't show visual table
+	visualTable = new QTable(7, 5, this);
+
 	// Create a unique ID for this instance of MessageSender
 	qint64 seedVal = QDateTime::currentMSecsSinceEpoch();
 	qsrand(seedVal);
@@ -313,7 +316,7 @@ MessageSender::MessageSender()
 
 	// Timer to update fingerTable
 	fingerTableTimer = new QTimer(this);
-	
+
 	// Timer to detect a failed successor
 	successorFailTimer = new QTimer(this);
 
@@ -360,14 +363,14 @@ MessageSender::MessageSender()
 
 	// Update the successor for every interval in our table
 	connect(fingerTableTimer, SIGNAL(timeout()), this, SLOT(updateTable()));
-	
+
 	// Connect the successor failure timer to the update protocol
 	connect(successorFailTimer, SIGNAL(timeout()), this, SLOT(failureProtocol()));
 
 	fingerTableTimer->start(5000);
 
 	stabilizeTimer->start(10000);
-	
+
 	checkPredTimer->start(10000);
 	// ********************************************************************************
 }
@@ -412,10 +415,10 @@ void MessageSender::stabilizeNode() {
 
 // Got our successor's predecessor. Continue stabilization
 void MessageSender::stabilizePredecessor(QVariantMap map) {
-	
+
 	int tempNodeID = map["nodeID"].toInt();
 	int succID = this->successor.first;
-	
+
 	qDebug() << "Got our successor's predecessor!" << endl;
 	qDebug() << "Checking if it our new successor is " << QString::number(tempNodeID) << endl;
 
@@ -437,8 +440,8 @@ void MessageSender::stabilizePredecessor(QVariantMap map) {
 		rNearest.append(oldSuccessor);
 		successorFailTimer->stop();
 	}
-	
-	// new node is not within us and our old successor. Update our secondSuccessor to be our successor's successor 
+
+	// new node is not within us and our old successor. Update our secondSuccessor to be our successor's successor
 	else {
 		int nextSuccessorID = map["nextSuccessorID"].toInt();
 		QPair<QHostAddress, quint16> nextSuccessorInfo;
@@ -469,7 +472,7 @@ void MessageSender::checkPredecessor() {
 		checkMap.insert("predecessorStatusRequest", 1);
 
 		socket->writeDatagram(getSerialized(checkMap), predInfo.first, predInfo.second);
-		
+
 		// Wait 5 seconds for a response
 		predResponseTimer->start(5000);
 	}
@@ -573,7 +576,7 @@ void MessageSender::onReceive()
 		QString hostName = QHostInfo::localHostName();
 		originID = hostName + idVal;
 		QCA::Initializer qcainit;
-	
+
 		QByteArray nodeHash = QCA::Hash("sha1").hash(originID.toLatin1()).toByteArray();
 		QDataStream in(nodeHash.right(2));
 		in.setByteOrder(QDataStream::BigEndian);
@@ -758,8 +761,8 @@ void MessageSender::onReceive()
 	// Received a predecessor reply. Part of stabilization protocol
 	else if(receivedMap.contains("predecessorReply")) {
 
-		qDebug() << "Got pred from succ. Check if it is our new succ then check if we are our succ's new pred" << endl; 
-		
+		qDebug() << "Got pred from succ. Check if it is our new succ then check if we are our succ's new pred" << endl;
+
 		successorFailTimer->stop();
 		// If Successor has a predecessor run stabilization protocol
 		if(receivedMap["predecessorReply"].toInt() != 257) {
@@ -771,7 +774,7 @@ void MessageSender::onReceive()
 
 		// Tell our successor to check if we are its predecessor
 		qDebug() << "sending predTest" <<endl;
-		
+
 		QVariantMap predCheck;
 		predCheck.insert("predecessorTest", 1);
 		predCheck.insert("nodeID", this->nodeID);
@@ -784,9 +787,9 @@ void MessageSender::onReceive()
 		int tempNodeID = receivedMap["nodeID"].toInt();
 		QPair<QHostAddress, quint16> tempNodeInfo(*senderAddress, *senderPort);
 		QPair<int, QPair<QHostAddress, quint16>> tempNode(tempNodeID, tempNodeInfo);
-		
+
 		qDebug() << "checking if my new pred is node " << QString::number(tempNodeID) << endl;
-		
+
 		// If predecessor doesn't exist or tempNode falls btw old predecessor and us then update
 		if((predecessor.first == 257) || (tempNodeID > predecessor.first && tempNodeID < nodeID) || (predecessor.first > tempNodeID && tempNodeID < nodeID && nodeID < predecessor.first)
 		|| (predecessor.first < tempNodeID && tempNodeID > nodeID && predecessor.first > nodeID)) {

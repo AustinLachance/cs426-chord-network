@@ -422,8 +422,8 @@ void MessageSender::stabilizePredecessor(QVariantMap map) {
 	QPair<int, QPair<QHostAddress, quint16>> tempNode(tempNodeID, tempNodeInfo);
 
 	// Node has been inserted between us and our old successor. Make this node new successor
-	if((this->nodeID < tempNodeID && tempNodeID < succID || this->nodeID > tempNodeID && tempNodeID < succID && succID < nodeID
-	|| (this->nodeID < tempNodeID && tempNodeID > succID && succID < nodeID) ) {
+	if((this->nodeID < tempNodeID && tempNodeID < succID) || (this->nodeID > tempNodeID && tempNodeID < succID && succID < nodeID)
+	|| (this->nodeID < tempNodeID && tempNodeID > succID && succID < nodeID)) {
 		this->successor = tempNode;
 	}
 }

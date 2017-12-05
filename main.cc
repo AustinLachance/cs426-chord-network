@@ -534,7 +534,6 @@ void MessageSender::displayTable() {
 	visualTable->setColumnCount(5);
 	visualTable->setRowCount(7);
 	for (int i = 0; i < 7; i++) {
-		visualTable->insertRow(i);
 		QByteArray key = QByteArray::number((nodeID + start) % 256);
 		for (int j = 0; j < (*fingerTable)[key].size(); j++) {
 			QTableWidgetItem *t = new QTableWidgetItem(QString((*fingerTable)[key][j]));
@@ -1465,6 +1464,7 @@ TableDialog::TableDialog()
 	// Finger Table Demo
 	// Create and don't show visual table
 	visualTable = new QTableWidget(7, 5, this);
+	visualTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
 	// Layout for table
 	QVBoxLayout *mainLayout = new QVBoxLayout();

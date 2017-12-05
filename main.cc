@@ -642,7 +642,7 @@ void MessageSender::onReceive()
 			//send our successor to the new node - i.e the sender
 			receivedMap.insert("successorID", successor.first);
 			receivedMap.insert("successorAddress", successor.second.first.toIPv4Address());
-			receivedMap.insert("sucessorPort", successor.second.second);
+			receivedMap.insert("successorPort", successor.second.second);
 			QByteArray newNodeSuccessorMsg = getSerialized(receivedMap);
 			socket->writeDatagram(newNodeSuccessorMsg, *senderAddress, *senderPort);
 			return;
@@ -845,7 +845,7 @@ void MessageSender::handleFindSuccessor(QVariantMap receivedMap) {
 	if (findSuccessor(receivedMap["updateNode"].toInt())) {
 			receivedMap.insert("successorID", successor.first);
 			receivedMap.insert("successorAddress", successor.second.first.toIPv4Address());
-			receivedMap.insert("sucessorPort", successor.second.second);
+			receivedMap.insert("successorPort", successor.second.second);
 			QByteArray newNodeSuccessorMsg = getSerialized(receivedMap);
 			socket->writeDatagram(newNodeSuccessorMsg, QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
 			return;

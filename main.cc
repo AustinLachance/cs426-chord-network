@@ -436,7 +436,7 @@ void MessageSender::stabilizePredecessor(QVariantMap map) {
 		int nextSuccessorID = map["nextSuccessorID"].toInt();
 		QPair<QHostAddress, quint16> nextSuccessorInfo;
 		nextSuccessorInfo.first = QHostAddress(map["nextSuccessorAddress"].toInt());
-		nextSuccessor.second = map["nextSuccessorPort"].toInt();
+		nextSuccessorInfo.second = map["nextSuccessorPort"].toInt();
 		QPair<int, QPair<QHostAddress, quint16>> nextSuccessorNode(nextSuccessorID, nextSuccessorInfo);
 		rNearest.clear();
 		rNearest.append(this->successor);

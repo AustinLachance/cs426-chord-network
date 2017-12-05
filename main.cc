@@ -489,6 +489,7 @@ void MessageSender::onReceive()
 	stream >> receivedMap;
 
 	qDebug() << "Receiving message from " << *senderAddress << " " << *senderPort << endl;
+	qDebug() << receivedMap;
 
 
 	// If receiving message from an unregistered peer, add to our peer list

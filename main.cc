@@ -147,6 +147,11 @@ QPushButton *ChatDialog::getDisplayTableButton() {
 	return displayTableButton;
 }
 
+// Return the list of files stored at this node
+QListWidget *ChatDialog::getChordFileStore() {
+	return chordFileStore;
+}
+
 
 // NetSocket constructor
 NetSocket::NetSocket()

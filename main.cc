@@ -646,7 +646,7 @@ void MessageSender::onReceive()
 		qDebug() << "Currently housed files";
 		QString fileListString = fileID + ":\t" + fileName;
 		QListWidget *chordFileStore = chat->getChordFileStore();
-		chordFileStore->addItem(fileName);
+		chordFileStore->addItem(fileListString);
 		
 		for (auto i = fileTable->begin(); i != fileTable->end(); i++) {
 			qDebug() << i.key() << i.value() << endl;

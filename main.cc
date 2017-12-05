@@ -392,7 +392,10 @@ bool MessageSender::createFingerTable() {
 // Run chord stabilization protocol
 void MessageSender::stabilizeNode() {
 	// Return if we aren't even in a chord network
-	if (successor.first == 257 && predecessor.first == 257) return;
+	if (successor.first == 257 && predecessor.first == 257) {
+		qDebug() << "Not in a chord network. Returning" << endl;
+		return;
+	}
 	QPair<QHostAddress, quint16> succInfo = this->successor.second;
 	qDebug() << "Stabilizing: checking if my successor is " << QString::number(this->successor.first);
 	// Request the predecessor of our successor

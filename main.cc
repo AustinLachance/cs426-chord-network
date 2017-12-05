@@ -635,10 +635,11 @@ void MessageSender::onReceive()
 	if (receivedMap.contains("store") && receivedMap.contains("fileID")) {
 		QList<QByteArray> fileEntry;
 		QString fileName = receivedMap["fileName"].toString();
-		fileEntry.append(fileName);
+		QString fileID = QString::number(receivedMap["fileID"].toInt());
+		fileEntry.append(QByteArray::fromHex(fileName.toLatin1()));
 		fileTable->insert(QByteArray::number(receivedMap["fileID"].toInt()), fileEntry);
 		qDebug() << "Currently housed files";
-		
+		QString fileListString = fileID + ": " + fileName;
 		QListWidget *chordFileStore = chat->getChordFileStore();
 		chordFileStore->addItem(fileName);
 		

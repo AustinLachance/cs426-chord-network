@@ -365,7 +365,7 @@ MessageSender::MessageSender()
 
 	fingerTableTimer->start(5000);
 
-	stabilizeTimer->start(10000);
+	// stabilizeTimer->start(10000);
 	// ********************************************************************************
 }
 

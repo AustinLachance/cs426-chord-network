@@ -577,7 +577,7 @@ void MessageSender::onReceive()
 			successor.second.first = QHostAddress(receivedMap["successorAddress"].toInt());
 			successor.second.second = receivedMap["successorPort"].toInt();
 		}
-		qDebug() << "My successor is " << QString::number(successor.first) << ;
+		qDebug() << "My successor is " << QString::number(successor.first);
 		return;
 	}
 	// If a chord node receives a forwarded message to find a new node's successor

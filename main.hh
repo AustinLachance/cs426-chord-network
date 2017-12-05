@@ -189,6 +189,8 @@ private:
 	QByteArray fileBuilder;
 	QString currentSearch;
 	QVariantMap searchResultsMap;
+	int updateNum;
+	int entryNum;
 
 	QPair<int, QPair<QHostAddress, quint16>> successor;
 	QPair<int, QPair<QHostAddress, quint16>> predecessor;

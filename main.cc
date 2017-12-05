@@ -538,7 +538,9 @@ void MessageSender::displayTable() {
 	QTableWidget *visualTable = chat->getVisualTable();
 	visualTable->clear();
 	int start = 1;
+	visualTable->setColumnCount(5);
 	for (int i = 0; i < 8; i++) {
+		visualTable->insertRow(i);
 		QByteArray key = QByteArray::number((nodeID + start) % 256);
 		for (int j = 0; j < (*fingerTable)[key].size(); j++) {
 			QTableWidgetItem t = QTableWidgetItem(QString((*fingerTable)[key][j]));

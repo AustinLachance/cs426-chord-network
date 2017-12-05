@@ -155,7 +155,6 @@ public:
 
 
 public slots:
-	void gotReturnPressed();
 	void onReceive();
 	void peerLookup(QHostInfo host);
 	void chordLookup(QHostInfo host);

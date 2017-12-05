@@ -531,7 +531,7 @@ void MessageSender::displayTable() {
 	for (int i = 0; i < 8; i++) {
 		QByteArray key = QByteArray::number((nodeID + start) % 256);
 		for (int j = 0; j < (*fingerTable)[key].size(); j++) {
-			QTableWidgetItem t = QTableWidgetItem((*fingerTable)[key][j].toString());
+			QTableWidgetItem t = QTableWidgetItem(QString((*fingerTable)[key][j]));
 			visualTable->setItem(i, j, &t);
 		}
 		start *= 2;

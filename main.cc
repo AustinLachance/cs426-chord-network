@@ -516,6 +516,8 @@ void MessageSender::failureProtocol() {
 	successor.first = rNearest[0].first;
 	successor.second.first = rNearest[0].second.first;
 	successor.second.second = rNearest[0].second.second;
+	chat->getSuccessorGui()->clear();
+	chat->getSuccessorGui()->append(QString::number(successor.first));
 	//add for stabilize monitoring rNearest successors
 }
 
@@ -628,6 +630,9 @@ void MessageSender::onReceive()
 		chat->getSuccessorGui()->append(QString::number(successor.first));
 		chat->getPredecessorGui()->clear();
 		chat->getPredecessorGui()->append(QString::number(predecessor.first));
+		successorFailTimer->stop();
+		checkPredTimer->stop();
+		predResponseTimer->stop();
 		return;
 	}
 	// If a chord node receives a forwarded message to find a new node's successor
@@ -784,6 +789,7 @@ void MessageSender::onReceive()
 		|| (predecessor.first < tempNodeID && tempNodeID > nodeID && predecessor.first > nodeID)) {
 			chat->getPredecessorGui()->clear();
 			chat->getPredecessorGui()->append(QString::number(tempNodeID));
+			checkPredTimer->
 			this->predecessor = tempNode;
 		}
 		else {

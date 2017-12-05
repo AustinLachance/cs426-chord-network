@@ -67,6 +67,7 @@ public:
 	MultiLineEdit *getFileSearchLine();
 	MultiLineEdit *getJoinChordLine();
 	QListWidget *getFileSearchResultsList();
+	QListWidget *getChordFileStore();
 	QPushButton *getShareFileButton();
 	QPushButton *getDisplayTableButton();
 	QTextEdit *getPredecessorGui();
@@ -77,10 +78,12 @@ private:
 	MultiLineEdit *fileSearchLine;
 	MultiLineEdit *joinChordLine;
 	QListWidget *fileSearchResultsList;
+	QListWidget *chordFileStore;
 	QTextEdit *successorGui;
 	QTextEdit *predecessorGui;
 	QPushButton *shareFileButton;
 	QPushButton *displayTableButton;
+	
 };
 
 

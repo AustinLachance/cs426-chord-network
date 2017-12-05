@@ -55,6 +55,11 @@ ChatDialog::ChatDialog()
 	QLabel *fileSearchResultsLabel = new QLabel();
 	fileSearchResultsLabel->setText("File Search Results");
 	fileSearchResultsList = new QListWidget();
+	
+	// Files this node is responsible for storing
+	QLabel *chordFileStoreLabel = new QLabel();
+	chordFileStoreLabel->setText("Stored Chord Files");
+	chordFileStore = new QListWidget();
 
 	// Text editor for sending messages and adding new friends
 	QVBoxLayout *editingLayout = new QVBoxLayout();
@@ -70,8 +75,10 @@ ChatDialog::ChatDialog()
 	fileLayout->addWidget(downloadFileLine);
 	fileLayout->addWidget(fileSearchLabel);
 	fileLayout->addWidget(fileSearchLine);
-	fileLayout->addWidget(fileSearchResultsLabel);
-	fileLayout->addWidget(fileSearchResultsList);
+	// fileLayout->addWidget(fileSearchResultsLabel);
+	// fileLayout->addWidget(fileSearchResultsList);
+	fileLayout->addWidget(chordFileStoreLabel);
+	fileLayout->addWidget(chordFileStore);
 
 	QHBoxLayout *predInfo = new QHBoxLayout();
 	predInfo->addWidget(predecessorLabel);
@@ -623,9 +630,25 @@ void MessageSender::onReceive()
 		socket->writeDatagram(newNodeMsg, *senderAddress, *senderPort);
 		return;
 	}
+	
+	// If we are responsible for this file, add it to our file table
+	if (receivedMap.contains("store") && receivedMap.contains("fileID")) {
+		QList<QByteArray> fileEntry;
+		QString fileName = receivedMap["fileName"].toString();
+		fileEntry << QByteArray(fileName);
+		fileTable->insert(QByteArray::number(receivedMap["fileID"].toInt()), fileEntry);
+		qDebug() << "Currently housed files";
+		
+		QListWidget *chordFileStore = chat->getChordFileStore();
+		chordFileStore->addItem(fileName);
+		
+		for (auto i = fileTable->begin(); i != fileTable->end(); i++) {
+			qDebug() << i.key() << i.value() << endl;
+		}
+	}
 
 	// If we receive the correct spot for this file
-	if (receivedMap.contains("fileNode") && receivedMap["fileNode"].toInt() == nodeID && (receivedMap.contains("successorID")) || receivedMap.contains("match")) {
+	else if (receivedMap.contains("fileNode") && receivedMap["fileNode"].toInt() == nodeID && (receivedMap.contains("successorID")) || receivedMap.contains("match")) {
 		QVariantMap storeMap;
 		storeMap.insert("fileName", receivedMap["fileName"].toString());
 		storeMap.insert("fileID", receivedMap["updateNode"].toInt());

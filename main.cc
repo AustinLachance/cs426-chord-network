@@ -71,7 +71,7 @@ ChatDialog::ChatDialog()
 	nodeInfo->addWidget(successorGui);
 	
 	QHBoxLayout *topLayout = new QHBoxLayout();
-	topLayout->addWidget(nodeInfo);
+	topLayout->addLayout(nodeInfo);
 	topLayout->addLayout(fileLayout);
 
 	QVBoxLayout *mainLayout = new QVBoxLayout();

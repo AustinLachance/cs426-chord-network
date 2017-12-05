@@ -442,6 +442,10 @@ void MessageSender::stabilizePredecessor(QVariantMap map) {
 		rNearest.append(this->successor);
 		rNearest.append(nextSuccessorNode)
 	}
+	qDebug() << "My successor List";
+	for (auto k: rNearest) {
+		qDebug() << k;
+	}
 }
 
 

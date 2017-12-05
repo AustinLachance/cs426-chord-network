@@ -61,8 +61,6 @@ class ChatDialog : public QDialog
 public:
 	ChatDialog();
 
-	QTextEdit *getTextView();
-	MultiLineEdit *getTextLine();
 	MultiLineEdit *getDownloadFileLine();
 	MultiLineEdit *getFileSearchLine();
 	MultiLineEdit *getJoinChordLine();
@@ -72,8 +70,6 @@ public:
 	QTextEdit *getSuccessorGui();
 
 private:
-	QTextEdit *textview;
-	MultiLineEdit *textline;
 	MultiLineEdit *downloadFileLine;
 	MultiLineEdit *fileSearchLine;
 	MultiLineEdit *joinChordLine;

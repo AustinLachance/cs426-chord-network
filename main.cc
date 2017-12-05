@@ -95,18 +95,6 @@ ChatDialog::ChatDialog()
 	setLayout(mainLayout);
 }
 
-
-// Return the textView of the ChatDialog
-QTextEdit *ChatDialog::getTextView() {
-	return textview;
-}
-
-
-// Return the text editor of the ChatDialog
-MultiLineEdit *ChatDialog::getTextLine() {
-	return textline;
-}
-
 // Return the predecessor Gui
 QTextEdit *ChatDialog::getPredecessorGui() {
 	return predecessorGui;
@@ -330,7 +318,6 @@ MessageSender::MessageSender()
 	successorFailTimer = new QTimer(this);
 
 	// Get references to private members of ChatDialog
-	MultiLineEdit* textline = chat->getTextLine();
 	MultiLineEdit* downloadFileLine = chat->getDownloadFileLine();
 	MultiLineEdit* fileSearchLine = chat->getFileSearchLine();
 	MultiLineEdit* joinChordLine = chat->getJoinChordLine();
@@ -342,10 +329,7 @@ MessageSender::MessageSender()
 	// chat->getSuccessorGui()->append(QString::number(257));
 	// chat->getPredecessorGui()->append(QString::number(257));
 
-	// ******** Signal->Slot connections ************************************************
-
-	// User presses return after entering chat message
-	connect(textline, SIGNAL(returnPressed()), this, SLOT(gotReturnPressed()));
+	// ******** Signal->Slot connections ***********************************************
 
 	// User presses return after entering a "host:port" to join a peer's chord
 	connect(joinChordLine, SIGNAL(returnPressed()), this, SLOT(joinGuiChord()));
@@ -508,30 +492,6 @@ void MessageSender::failureProtocol() {
 	successor.second.first = rNearest[0].second.first;
 	successor.second.second = rNearest[0].second.second;
 	//add for stabilize monitoring rNearest successors
-}
-
-
-// Slot method for when return is pressed
-void MessageSender::gotReturnPressed()
-{
-	qDebug() << "Got ReturnPressed Slot" << endl;
-	MultiLineEdit *textline = chat->getTextLine();
-
-	// Serialize the msg written in the text editor
-	QString str = textline->toPlainText();
-	QVariantMap map;
-	map.insert("ChatText", str);
-	map.insert("Origin", originID);
-	QByteArray serializedMsg = getSerialized(map);
-
-	// Add our own message to our msgMap & update status map
-	// msgMap.insert(key, map);
-	chat->getTextView()->append(str);
-
-	// Send message to all peers
-	sendToPeers(serializedMsg);
-
-	textline->clear();
 }
 
 
@@ -948,7 +908,7 @@ void MessageSender::handleRumorMessage(QVariantMap receivedMap, QHostAddress *se
 		if(receivedMap.contains("ChatText")) {
 
 			QString msg = receivedMap["ChatText"].toString();
-			chat->getTextView()->append(msg);
+			// chat->getTextView()->append(msg);
 
 			qDebug() << "new chat message: " << key << " " << msg << endl;
 		}

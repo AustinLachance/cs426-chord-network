@@ -363,7 +363,7 @@ MessageSender::MessageSender()
 	// Update the successor for every interval in our table
 	connect(fingerTableTimer, SIGNAL(timeout()), this, SLOT(updateTable()));
 
-	//fingerTableTimer->start(10000);
+	fingerTableTimer->start(5000);
 
 	stabilizeTimer->start(10000);
 	// ********************************************************************************
@@ -560,6 +560,10 @@ void MessageSender::onReceive()
 		qDebug() << QHostAddress(receivedMap["successorAddress"].toInt());
 		qDebug() << receivedMap["successorPort"].toInt();
 		updateNum = nodeID + entryNum;
+		if (entryNum == 256) {
+			entryNum = 1;
+			updateNum = (nodeID + 1) % 256;
+		}
 	}
 	// If a new node receives its successor details
 	else if (receivedMap.contains("updateNode") && receivedMap.contains("successorID")) {

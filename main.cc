@@ -1477,9 +1477,10 @@ void MessageSender::getFileMetadata(const QStringList &fileList) {
 		qDebug() << "File Hash is " << QString::number(fileID);
 		
 		QVariantMap fileMap;
+		QStringList tokens = fileList[i].split("/");
 		fileMap.insert("updateNode", fileID);
 		fileMap.insert("fileNode", nodeID);
-		fileMap.insert("fileName", fileList[i]);
+		fileMap.insert("fileName", tokens.at(tokens.size() - 1));
 		socket->writeDatagram(getSerialized(fileMap), successor.second.first, successor.second.second);
 		
 		QFile file(fileList[i]);

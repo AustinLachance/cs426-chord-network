@@ -663,7 +663,10 @@ void MessageSender::onReceive()
 			receivedMap.insert("originAddress", senderAddress->toIPv4Address());
 			receivedMap.insert("originPort", *senderPort);
 		}
-		if ()
+		// Detect a cycle
+		if (receivedMap.contains(QString::number(nodeID))) {
+			
+		}
 		
 	}
 	

@@ -539,12 +539,13 @@ void MessageSender::displayTable() {
 	visualTable->clear();
 	int start = 1;
 	visualTable->setColumnCount(5);
-	for (int i = 0; i < 8; i++) {
+	visualTable->setRowCount(7);
+	for (int i = 0; i < 7; i++) {
 		visualTable->insertRow(i);
 		QByteArray key = QByteArray::number((nodeID + start) % 256);
 		for (int j = 0; j < (*fingerTable)[key].size(); j++) {
-			QTableWidgetItem t = QTableWidgetItem(QString((*fingerTable)[key][j]));
-			visualTable->setItem(i, j, &t);
+			QTableWidgetItem *t = new QTableWidgetItem(QString((*fingerTable)[key][j])).arg(i).arg(j);
+			visualTable->setItem(i, j, t);
 		}
 		start *= 2;
 	}

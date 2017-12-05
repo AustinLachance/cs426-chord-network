@@ -532,7 +532,7 @@ void MessageSender::displayTable() {
 	visualTable->clear();
 	int start = 1;
 	QStringList *labels = new QStringList();
-	QStringList << "Start ID" << "End ID" << "Successor ID" << "IP Address" << "Port";
+	(*labels) << "Start ID" << "End ID" << "Successor ID" << "IP Address" << "Port";
 	for (int i = 0; i < 7; i++) {
 		QByteArray key = QByteArray::number((nodeID + start) % 256);
 		for (int j = 0; j < (*fingerTable)[key].size(); j++) {
@@ -634,7 +634,7 @@ void MessageSender::onReceive()
 			socket->writeDatagram(getSerialized(storeMap), *senderAddress, *senderPort);
 		}
 		else {
-			socket->writeDatagram(getSerialized(storeMap, QHostAddress(receivedMap["successorAddress"].toInt())), receivedMap["successorPort"].toInt());
+			socket->writeDatagram(getSerialized(storeMap), QHostAddress(receivedMap["successorAddress"].toInt()), receivedMap["successorPort"].toInt());
 		}
 	}
 
@@ -1438,11 +1438,11 @@ void MessageSender::getFileMetadata(const QStringList &fileList) {
 		
 		
 		QByteArray fileHash = QCA::Hash("sha1").hash(fileList[i].toLatin1()).toByteArray();
-		QDataStream in(fileHash.right(2));
-		in.setByteOrder(QDataStream::BigEndian);
+		QDataStream fileStream(fileHash.right(2));
+		fileStream.setByteOrder(QDataStream::BigEndian);
 		quint16 result;
-		in >> result;
-		fileID = result % 256;
+		fileStream >> result;
+		quint32 fileID = result % 256;
 		
 		qDebug() << "Uploading " << fileList[i] << endl;
 		qDebug() << "File Hash is " << QString::number(fileID);

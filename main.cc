@@ -363,7 +363,7 @@ MessageSender::MessageSender()
 	// Update the successor for every interval in our table
 	connect(fingerTableTimer, SIGNAL(timeout()), this, SLOT(updateTable()));
 
-	fingerTableTimer->start(10000);
+	//fingerTableTimer->start(10000);
 
 	stabilizeTimer->start(10000);
 	// ********************************************************************************

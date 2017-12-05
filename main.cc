@@ -710,7 +710,7 @@ void MessageSender::onReceive()
 		
 		// If predecessor doesn't exist or tempNode falls btw old predecessor and us then update
 		if((predecessor.first == 257) || (tempNodeID > predecessor.first && tempNodeID < nodeID) || (predecessor.first > tempNodeID && tempNodeID < nodeID && nodeID < predecessor.first)
-		|| (predecessor.first < tempNodeID && tempNodeID > nodeID && predecessor.first < nodeID)))) {
+		|| (predecessor.first < tempNodeID && tempNodeID > nodeID && predecessor.first < nodeID)) {
 			this->predecessor = tempNode;
 		}
 		else {

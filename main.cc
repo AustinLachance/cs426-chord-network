@@ -365,7 +365,7 @@ MessageSender::MessageSender()
 
 	fingerTableTimer->start(10000);
 
-	// stabilizeTimer->start(10000);
+	stabilizeTimer->start(10000);
 	// ********************************************************************************
 }
 
@@ -594,6 +594,7 @@ void MessageSender::onReceive()
 	}
 	// If a chord node receives a forwarded message to find its closest predecessor to a new node
 	else if (receivedMap.contains("updateNode") && receivedMap.contains("findClosestPredecessor")) {
+		qDebug() << "supposed to find closest predecessor";
 		QByteArray closestPredecessor = findClosestPredecessor(receivedMap["updateNode"].toInt());
 		// Shouldn't have to check, but its possible that you yourself are the closest predecessor
 		receivedMap.remove("findClosestPredecessor");

@@ -280,18 +280,12 @@ MessageSender::MessageSender()
 	QString hostName = QHostInfo::localHostName();
 	originID = hostName + idVal;
 	QCA::Initializer qcainit;
-	qDebug() << "hash shit" << endl;
-	// QCA::Hash hashObj("sha1");
-	// QByteArray dummyByte = originID.toUtf8();
-	// hashObj.update(dummyByte);
 	
 	QByteArray nodeHash = QCA::Hash("sha1").hash(originID.toLatin1()).toByteArray();
 	QDataStream in(nodeHash.right(2));
 	in.setByteOrder(QDataStream::BigEndian);
 	quint16 result; 
 	in >> result;
-	qDebug() << "Hex right 2 bytes " << nodeHash.right(2).toHex();
-	qDebug() << "result: " << QString::number(result);
 	nodeID = result % 256;
 	
 	
@@ -385,7 +379,7 @@ bool MessageSender::createFingerTable() {
 // Run chord stabilization protocol
 void MessageSender::stabilizeNode() {
 	QPair<QHostAddress, quint16> succInfo = this->successor.second;
-	
+	qDebug() << "Stabilizing: checking if my successor is " << QString::number(this->successor.first);
 	// Request the predecessor of our successor
 	QVariantMap predRequestMap;
 	predRequestMap.insert("predecessorRequest", -1);
@@ -510,6 +504,7 @@ void MessageSender::onReceive()
 		successor.first = receivedMap["successorID"].toInt();
 		successor.second.first = QHostAddress(receivedMap["successorAddress"].toInt());
 		successor.second.second = receivedMap["successorPort"].toInt();
+		qDebug() << "My successor is " << QString::number(successor.first);
 		return;
 	}
 		
@@ -953,8 +948,8 @@ QVariantMap MessageSender::createBlockRequest(QString dest, QString origin, QByt
 // Find the successor for the given ID
 bool MessageSender::findSuccessor(quint32 newNode) {
 	// The node's successor is this current node's successor
-	if ((nodeID < newNode && newNode < successor.first) || (nodeID < newNode && newNode > successor.first) 
-	|| (nodeID > newNode && newNode < successor.first)) {
+	if (successor.first != -1 && ((nodeID < newNode && newNode < successor.first) || (nodeID < newNode && newNode > successor.first) 
+	|| (nodeID > newNode && newNode < successor.first))) {
 		return true;
 	}
 	return false;
@@ -965,8 +960,8 @@ QByteArray MessageSender::findClosestPredecessor(quint32 newNode) {
 	while (i >= 1) {
 		QByteArray fingerKey = QByteArray::number((nodeID + i) % 256);
 		quint32 successorID = (*fingerTable)[fingerKey][2].toInt();
-		if ((nodeID < successorID && successorID < newNode) || (nodeID < successorID && successorID > newNode)
-		|| (nodeID > successorID && successorID < newNode)) {
+		if (successorID != -1 && ((nodeID < successorID && successorID < newNode) || (nodeID < successorID && successorID > newNode)
+		|| (nodeID > successorID && successorID < newNode))) {
 			return fingerKey;
 		}	
 		i /= 2;

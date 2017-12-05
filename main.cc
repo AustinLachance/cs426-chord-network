@@ -712,7 +712,8 @@ void MessageSender::onReceive()
 		QPair<int, QPair<QHostAddress, quint16>> tempNode(tempNodeID, tempNodeInfo);
 
 		// If predecessor doesn't exist or tempNode falls btw old predecessor and us then update
-		if((predecessor.first == 257) || (tempNodeID > this->predecessor.first && tempNodeID < this->nodeID)) {
+		if((predecessor.first == 257) || (tempNodeID > predecessor.first && tempNodeID < nodeID) || (predecessor.first > tempNodeID && tempNodeID < nodeID && nodeID < predecessor.first)
+		|| (predecessor.first < tempNodeID && tempNodeID > nodeID && predecessor.first < nodeID)))) {
 			this->predecessor = tempNode;
 		}
 
@@ -1038,7 +1039,7 @@ QVariantMap MessageSender::createBlockRequest(QString dest, QString origin, QByt
 bool MessageSender::findSuccessor(quint32 newNode) {
 	// The node's successor is this current node's successor
 	if (successor.first != 257 && ((nodeID < newNode && newNode < successor.first) || (nodeID < newNode && newNode > successor.first && successor.first < nodeID)
-	|| (nodeID > newNode && newNode < successor.first && successor.first < nodeID))) {
+	|| (nodeID > newNode && newNode < successor.first && nodeID < successor.first))) {
 		qDebug() << "At node " << QString::number(nodeID) << ", " << QString::number(newNode) << "'s successor is " << QString::number(successor.first);
 		return true;
 	}

@@ -685,13 +685,13 @@ void MessageSender::onReceive()
 		else {
 			quint32 predID = predecessor.first;
 			QPair<QHostAddress, quint16> predInfo = predecessor.second;
-			qDebug() << "Got a request for my predecessor, sending its info back to sender" << endl;
+			qDebug() << "Got a request for my predecessor sending my pred " << QString(predID) << endl;
 			predReply.insert("predecessorReply", 1);
 			predReply.insert("nodeID", predID);
 			predReply.insert("nodeAddress", predInfo.first.toIPv4Address());
 			predReply.insert("nodePort", predInfo.second);
 		}
-
+		qDebug() << "I am sending my predecessor back to the sender/potential predecessor";
 		socket->writeDatagram(getSerialized(predReply), *senderAddress, *senderPort);
 	}
 

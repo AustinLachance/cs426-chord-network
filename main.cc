@@ -639,7 +639,7 @@ void MessageSender::onReceive()
 		fileEntry.append(QByteArray::fromHex(fileName.toLatin1()));
 		fileTable->insert(QByteArray::number(receivedMap["fileID"].toInt()), fileEntry);
 		qDebug() << "Currently housed files";
-		QString fileListString = fileID + ": " + fileName;
+		QString fileListString = fileID + ":\t" + fileName;
 		QListWidget *chordFileStore = chat->getChordFileStore();
 		chordFileStore->addItem(fileName);
 		

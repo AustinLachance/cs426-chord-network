@@ -677,7 +677,10 @@ void MessageSender::onReceive()
 		QList<QByteArray> fileEntry;
 		QString fileName = receivedMap["fileName"].toString();
 		QString fileID = QString::number(receivedMap["fileID"].toInt());
-		fileEntry.append(QByteArray::fromHex(fileName.toLatin1()));
+		QByteArray byteName = QByteArray();
+		byteName.append(fileName);
+		qDebug() << byteName.toString();
+		fileEntry.append(byteName);
 		fileTable->insert(QByteArray::number(receivedMap["fileID"].toInt()), fileEntry);
 		qDebug() << "Currently housed files";
 		QString fileListString = fileID + ":\t" + fileName;

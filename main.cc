@@ -910,8 +910,9 @@ void MessageSender::onReceive()
 			chat->getPredecessorGui()->clear();
 			chat->getPredecessorGui()->append(QString::number(tempNodeID));
 			predResponseTimer->stop();
+			qDebug() << "Old Predecessor: " << QString::number(this->predecessor.first);
 			this->predecessor = tempNode;
-			
+			qDebug() << "New Predecessor: " << QString::number(this->predecessor.first);
 			// Check whether chord files should be transferred to predecessor
 			for(auto key: (*fileTable).keys()) {
 				quint32 fileID = key.toInt();

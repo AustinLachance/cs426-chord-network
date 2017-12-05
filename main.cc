@@ -561,6 +561,10 @@ void MessageSender::onReceive()
 		qDebug() << receivedMap["successorPort"].toInt();
 		updateNum = (nodeID + entryNum) % 256;
 		if (entryNum == 256) {
+			for (auto i = fingerTable->begin(); i != fingerTable->end(); i++) {
+				qDebug() << i.key() << i.value() << endl;
+			}
+			fingerTableTimer->stop();
 			entryNum = 1;
 			updateNum = (nodeID + 1) % 256;
 		}

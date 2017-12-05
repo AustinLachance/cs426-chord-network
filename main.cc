@@ -698,6 +698,9 @@ void MessageSender::onReceive()
 	// Received a predecessor reply. Part of stabilization protocol
 	else if(receivedMap.contains("predecessorReply")) {
 
+		qDebug() << "Got pred from succ. Check if it is our new succ then check if we are our succ's new pred" << endl; 
+		
+
 		// If Successor has a predecessor run stabilization protocol
 		if(receivedMap["predecessorReply"].toInt() != 257) {
 			stabilizePredecessor(receivedMap);
@@ -707,6 +710,8 @@ void MessageSender::onReceive()
 		QPair<QHostAddress, quint16> succInfo = successor.second;
 
 		// Tell our successor to check if we are its predecessor
+		qDebug() << "sending predTest" <<endl;
+		
 		QVariantMap predCheck;
 		predCheck.insert("predecessorTest", 1);
 		predCheck.insert("nodeID", this->nodeID);

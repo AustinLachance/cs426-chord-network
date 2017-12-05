@@ -922,7 +922,7 @@ void MessageSender::onReceive()
 					qDebug() << QString::number(fileID) << endl;
 					QVariantMap storeFileMap;
 					storeFileMap.insert("store", 1);
-					storeFileMap.insert("fildID", fileID);
+					storeFileMap.insert("fileID", fileID);
 					storeFileMap.insert("fileName", QString((*fileTable)[key][0]));
 					socket->writeDatagram(getSerialized(storeFileMap), predecessor.second.first, predecessor.second.second);
 					fileTable->remove(key);

@@ -559,7 +559,7 @@ void MessageSender::onReceive()
 		qDebug() << "Updating table: " << newEntry;
 		qDebug() << QHostAddress(receivedMap["successorAddress"].toInt());
 		qDebug() << receivedMap["successorPort"].toInt();
-		updateNum = nodeID + entryNum;
+		updateNum = (nodeID + entryNum) % 256;
 		if (entryNum == 256) {
 			entryNum = 1;
 			updateNum = (nodeID + 1) % 256;

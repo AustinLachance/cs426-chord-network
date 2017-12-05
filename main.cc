@@ -440,7 +440,7 @@ void MessageSender::stabilizePredecessor(QVariantMap map) {
 		QPair<int, QPair<QHostAddress, quint16>> nextSuccessorNode(nextSuccessorID, nextSuccessorInfo);
 		rNearest.clear();
 		rNearest.append(this->successor);
-		rNearest.append(nextSuccessorNode)
+		rNearest.append(nextSuccessorNode);
 	}
 	qDebug() << "My successor List";
 	for (auto k: rNearest) {

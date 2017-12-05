@@ -664,9 +664,9 @@ void MessageSender::onReceive()
 			receivedMap.insert("originPort", *senderPort);
 		}
 		// Detect a cycle
-		if (receivedMap.contains(QString::number(nodeID))) {
+		// if (receivedMap.contains(QString::number(nodeID))) {
 			
-		}
+		// }
 		
 	}
 	

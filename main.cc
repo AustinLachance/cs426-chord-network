@@ -456,6 +456,8 @@ void MessageSender::stabilizePredecessor(QVariantMap map) {
 // Check the status of this node's predecessor
 void MessageSender::checkPredecessor() {
 
+	qDebug() << "send msg to pred to see if still alive" << endl;
+
 	// If predecessor exists check if it is alive
 	if(predecessor.first != 257) {
 		QPair<QHostAddress, quint16> predInfo = this->predecessor.second;

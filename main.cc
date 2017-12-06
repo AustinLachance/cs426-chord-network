@@ -664,9 +664,40 @@ void MessageSender::onReceive()
 			receivedMap.insert("originPort", *senderPort);
 		}
 		// Detect a cycle
-		// if (receivedMap.contains(QString::number(nodeID))) {
-			
-		// }
+		if (receivedMap.contains(QString::number(nodeID))) {
+			receivedMap.insert("empty", 1);
+			socket->writeDatagram(getSerialized(receivedMap), QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
+		}
+		// Found the file in our table 
+		else if (fileTable->keys().find(QByteArray::number(receivedMap["updateNode"])) != fileTable->keys().end()) {
+			receivedMap.insert("success", nodeID);
+			socket->writeDatagram(getSerialized(receivedMap), QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
+			return;
+		}
+		// Check our intervals
+		else {
+			int start = 128;
+			quint32 updateNode = receivedMap["updateNode"].toInt();
+			for (int i = 0; i < 8; i++) {
+				QByteArray key = QByteArray::number((nodeID + start) % 256);
+				quint32 start = (*fingerTable)[key][0].toInt();
+				quint32 end = (*fingerTable)[key][1].toInt();
+				if ((start < updateNode && updateNode < end) || (start < updateNode && updateNode > end && end < start) 
+				|| (start > updateNode && updateNode < end && end < start)) {
+					// Successor is the same as current node, cycle
+					if ((*fingerTable)[key][2].toInt() == nodeID) {
+						receivedMap.insert("empty", 1);
+						socket->writeDatagram(getSerialized(receivedMap), QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
+					}
+					else {
+						receivedMap.insert(QString::number(nodeID));
+						socket->writeDatagram(getSerialized(receivedMap), QHostAddress((*fingerTable)[key][3].toInt()), (*fingerTable)[key][4].toInt());
+					}
+					return;
+				}
+				start /= 2;
+			}
+		}
 		
 	}
 	

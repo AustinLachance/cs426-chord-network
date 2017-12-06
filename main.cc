@@ -29,7 +29,7 @@ ChatDialog::ChatDialog()
 
 	// Create the share file button
 	shareFileButton = new QPushButton("Share a File");
-	
+
 	// Create the share file button
 	displayTableButton = new QPushButton("Show Finger Table");
 
@@ -38,7 +38,7 @@ ChatDialog::ChatDialog()
 	joinChordLine->setMaximumHeight(50);
 	QLabel* chordLabel = new QLabel();
 	chordLabel->setText("Join a peer's chord with host:port");
-	
+
 	// Search file text editor
 	searchFileLine = new MultiLineEdit();
 	searchFileLine->setMaximumHeight(40);
@@ -60,7 +60,7 @@ ChatDialog::ChatDialog()
 	QLabel *fileSearchResultsLabel = new QLabel();
 	fileSearchResultsLabel->setText("File Search Results");
 	fileSearchResultsList = new QListWidget();
-	
+
 	// Files this node is responsible for storing
 	QLabel *chordFileStoreLabel = new QLabel();
 	chordFileStoreLabel->setText("Stored Chord Files");
@@ -271,7 +271,7 @@ MessageSender::MessageSender()
 	// Create instance of ChatDialog and show it
 	chat = new ChatDialog();
 	chat->show();
-	
+
 	// Create instance of TableDialog and hide it
 	tableDialog = new TableDialog();
 	tableDialog->hide();
@@ -369,7 +369,7 @@ MessageSender::MessageSender()
 
 	// User presses return after entering a "host:port" to join a peer's chord
 	connect(joinChordLine, SIGNAL(returnPressed()), this, SLOT(joinGuiChord()));
-	
+
 	// User enters a file ID to search for
 	connect(searchFileLine, SIGNAL(returnPressed()), this, SLOT(searchChordFile()));
 
@@ -384,7 +384,7 @@ MessageSender::MessageSender()
 
 	// User clicks the share file button
 	connect(shareFileButton, SIGNAL(clicked()), this, SLOT(openFileDialog()));
-	
+
 	// User clicks the display table button
 	connect(displayTableButton, SIGNAL(clicked()), this, SLOT(displayTable()));
 
@@ -651,7 +651,7 @@ void MessageSender::onReceive()
 		socket->writeDatagram(newNodeMsg, *senderAddress, *senderPort);
 		return;
 	}
-	
+
 	// We got the search result for a file (node or not present)
 	if (receivedMap.contains("fileSearch") && receivedMap["fileSearch"].toInt() == nodeID) {
 		if (receivedMap.contains("empty")) {
@@ -660,14 +660,15 @@ void MessageSender::onReceive()
 			searchFileLine->insertPlainText("File " + QString::number(receivedMap["updateNode"].toInt()) + " not found in the chord.");
 			qDebug() << "File " << QString::number(receivedMap["updateNode"].toInt()) << " not found in the chord.";
 		}
-		else {
+		else if (receivedMap.contains("success")){
 			MultiLineEdit *searchFileLine = chat->getSearchFileLine();
 			searchFileLine->clear();
 			searchFileLine->insertPlainText("File " + QString::number(receivedMap["updateNode"].toInt()) + " found at node " + QString::number(receivedMap["success"].toInt()) );
 			qDebug() << "File " << QString::number(receivedMap["updateNode"].toInt()) << " found at node " << QString::number(receivedMap["success"].toInt());
 		}
+		return;
 	}
-	
+
 	// We are searching for a file
 	else if (receivedMap.contains("fileSearch")) {
 		if (!receivedMap.contains("originAddress")) {
@@ -678,8 +679,9 @@ void MessageSender::onReceive()
 		if (receivedMap.contains(QString::number(nodeID))) {
 			receivedMap.insert("empty", 1);
 			socket->writeDatagram(getSerialized(receivedMap), QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
+			return;
 		}
-		// Found the file in our table 
+		// Found the file in our table
 		else if (fileTable->keys().contains(QByteArray::number(receivedMap["updateNode"].toInt()))) {
 			receivedMap.insert("success", nodeID);
 			socket->writeDatagram(getSerialized(receivedMap), QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
@@ -693,8 +695,8 @@ void MessageSender::onReceive()
 				QByteArray key = QByteArray::number((nodeID + start) % 256);
 				quint32 start = (*fingerTable)[key][0].toInt();
 				quint32 end = (*fingerTable)[key][1].toInt();
-				if ((start < updateNode && updateNode < end) || (start < updateNode && updateNode > end && end < start) 
-				|| (start > updateNode && updateNode < end && end < start)) {
+				if ((start <= updateNode && updateNode < end) || (start <= updateNode && updateNode > end && end < start)
+				|| (start => updateNode && updateNode < end && end < start)) {
 					// Successor is the same as current node, cycle
 					if ((*fingerTable)[key][2].toInt() == nodeID) {
 						receivedMap.insert("empty", 1);
@@ -709,13 +711,13 @@ void MessageSender::onReceive()
 				start /= 2;
 			}
 		}
-		
+
 	}
-	
+
 	// If we are responsible for this file, add it to our file table
 	if (receivedMap.contains("store") && receivedMap.contains("fileID")) {
 		qDebug() << "Got a store file" << endl;
-		
+
 		QList<QByteArray> fileEntry;
 		QString fileName = receivedMap["fileName"].toString();
 		QString fileID = QString::number(receivedMap["fileID"].toInt());
@@ -728,7 +730,7 @@ void MessageSender::onReceive()
 		QString fileListString = fileID + ":\t" + fileName;
 		QListWidget *chordFileStore = chat->getChordFileStore();
 		chordFileStore->addItem(fileListString);
-		
+
 		for (auto i = fileTable->begin(); i != fileTable->end(); i++) {
 			qDebug() << i.key() << i.value() << endl;
 		}
@@ -973,7 +975,7 @@ void MessageSender::onReceive()
 					fileTable->remove(key);
 					makeStoredFileGui();
 				}
-				
+
 			}
 		}
 		else {
@@ -1094,7 +1096,7 @@ void MessageSender::handleFindSuccessor(QVariantMap receivedMap) {
 	if (receivedMap.contains("fileNode") && receivedMap["updateNode"].toInt() == nodeID) {
 		receivedMap.insert("match", 1);
 		socket->writeDatagram(getSerialized(receivedMap), QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
-		
+
 	}
 	if (findSuccessor(receivedMap["updateNode"].toInt())) {
 			receivedMap.insert("successorID", successor.first);
@@ -1480,7 +1482,7 @@ void MessageSender::joinGuiChord()
  	joinChord(joinChordLine->toPlainText());
  	joinChordLine->clear();
  }
- 
+
  // Slot to trigger searching for a file
 void MessageSender::searchChordFile()
  {
@@ -1587,31 +1589,31 @@ void MessageSender::getFileMetadata(const QStringList &fileList) {
 	int size = fileList.size();
 	for(int i=0; i < size; i++) {
 		QCA::Hash shaHash("sha1");
-		
-		
+
+
 		QByteArray uploadHash = QCA::Hash("sha1").hash(fileList[i].toLatin1()).toByteArray();
 		QDataStream fileStream(uploadHash.right(2));
 		fileStream.setByteOrder(QDataStream::BigEndian);
 		quint16 result;
 		fileStream >> result;
 		quint32 fileID = result % 256;
-		
+
 		qDebug() << "Uploading " << fileList[i] << endl;
 		qDebug() << "File Hash is " << QString::number(fileID);
-		
+
 		QVariantMap fileMap;
 		QStringList tokens = fileList[i].split("/");
 		fileMap.insert("updateNode", fileID);
 		fileMap.insert("fileNode", nodeID);
 		fileMap.insert("fileName", tokens.at(tokens.size() - 1));
 		socket->writeDatagram(getSerialized(fileMap), successor.second.first, successor.second.second);
-		
+
 		// QFile file(fileList[i]);
 		// QByteArray output;
 	 //   if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
 	 //       continue;
 	 //   }
-	    
+
 	 //   QDataStream in(&file);
 	 //   int bytesRead;
 	 //   int totalBytes = 0;
@@ -1656,7 +1658,7 @@ void MessageSender::getFileMetadata(const QStringList &fileList) {
 TableDialog::TableDialog()
 {
 	setWindowTitle("Finger Table");
-	
+
 	// Finger Table Demo
 	// Create and don't show visual table
 	visualTable = new QTableWidget(7, 5, this);

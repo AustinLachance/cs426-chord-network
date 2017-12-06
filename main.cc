@@ -690,7 +690,7 @@ void MessageSender::onReceive()
 						socket->writeDatagram(getSerialized(receivedMap), QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
 					}
 					else {
-						receivedMap.insert(QString::number(nodeID));
+						receivedMap.insert(QString::number(nodeID), 1);
 						socket->writeDatagram(getSerialized(receivedMap), QHostAddress((*fingerTable)[key][3].toInt()), (*fingerTable)[key][4].toInt());
 					}
 					return;

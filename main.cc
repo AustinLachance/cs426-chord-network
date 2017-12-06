@@ -656,11 +656,13 @@ void MessageSender::onReceive()
 	if (receivedMap.contains("fileSearch") && receivedMap["fileSearch"].toInt() == nodeID) {
 		if (receivedMap.contains("empty")) {
 			MultiLineEdit *searchFileLine = chat->getSearchFileLine();
+			searchFileLine->clear();
 			searchFileLine->insertPlainText("File " + QString::number(receivedMap["updateNode"].toInt()) + " not found in the chord.");
 			qDebug() << "File " << QString::number(receivedMap["updateNode"].toInt()) << " not found in the chord.";
 		}
 		else {
 			MultiLineEdit *searchFileLine = chat->getSearchFileLine();
+			searchFileLine->clear();
 			searchFileLine->insertPlainText("File " + QString::number(receivedMap["updateNode"].toInt()) + " found at node " + QString::number(receivedMap["success"].toInt()) );
 			qDebug() << "File " << QString::number(receivedMap["updateNode"].toInt()) << " found at node " << QString::number(receivedMap["success"].toInt());
 		}

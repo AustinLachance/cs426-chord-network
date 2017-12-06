@@ -654,7 +654,12 @@ void MessageSender::onReceive()
 	
 	// We got the search result for a file (node or not present)
 	if (receivedMap.contains("fileSearch") && receivedMap["fileSearch"].toInt() == nodeID) {
-		qDebug() << "lol";
+		if (receivedMap.contains("empty")) {
+			qDebug() << "File " << QString::number(receivedMap["updateNode"].toInt()) << " not found in the chord.";
+		}
+		else {
+			qDebug() << "File " << QString::number(receivedMap["updateNode"].toInt()) << " found at node " << QString::number(receivedMap["success"].toInt());
+		}
 	}
 	
 	// We are searching for a file

@@ -669,7 +669,7 @@ void MessageSender::onReceive()
 			socket->writeDatagram(getSerialized(receivedMap), QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
 		}
 		// Found the file in our table 
-		else if (fileTable->keys().contains(QByteArray::number(receivedMap["updateNode"]))) {
+		else if (fileTable->keys().contains(QByteArray::number(receivedMap["updateNode"].toInt()))) {
 			receivedMap.insert("success", nodeID);
 			socket->writeDatagram(getSerialized(receivedMap), QHostAddress(receivedMap["originAddress"].toInt()), receivedMap["originPort"].toInt());
 			return;

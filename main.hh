@@ -218,6 +218,7 @@ private:
 	QPair<int, QPair<QHostAddress, quint16>> successor;
 	QPair<int, QPair<QHostAddress, quint16>> predecessor;
 	QList<QPair<int, QPair<QHostAddress, quint16>>> rNearest;
+	QList<QHash<QByteArray, QList<QByteArray>>>* rNearestFiles;
 	QHash<QByteArray, QList<QByteArray>>* fingerTable;
 	QHash<QByteArray, QList<QByteArray>>* fileTable;
 

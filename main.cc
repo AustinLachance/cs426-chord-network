@@ -575,7 +575,7 @@ void MessageSender::displayTable() {
 
 // Slot method to update fingerTable
 void MessageSender::failureProtocol() {
-	qDebug() << "SHIT";
+	qDebug() << "Failure Protocol";
 	if (!rNearest.size() || rNearest[0].first == 257) return;
 	rNearest.removeFirst();
 	if (!rNearest.size()) return;
@@ -655,9 +655,13 @@ void MessageSender::onReceive()
 	// We got the search result for a file (node or not present)
 	if (receivedMap.contains("fileSearch") && receivedMap["fileSearch"].toInt() == nodeID) {
 		if (receivedMap.contains("empty")) {
+			MultiLineEdit *searchFileLine = chat->getSearchFileLine();
+			searchFileLine->insertPlainText("File " + QString::number(receivedMap["updateNode"].toInt()) + " not found in the chord.");
 			qDebug() << "File " << QString::number(receivedMap["updateNode"].toInt()) << " not found in the chord.";
 		}
 		else {
+			MultiLineEdit *searchFileLine = chat->getSearchFileLine();
+			searchFileLine->insertPlainText("File " + QString::number(receivedMap["updateNode"].toInt()) + " found at node " << QString::number(receivedMap["success"].toInt());
 			qDebug() << "File " << QString::number(receivedMap["updateNode"].toInt()) << " found at node " << QString::number(receivedMap["success"].toInt());
 		}
 	}

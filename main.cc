@@ -696,7 +696,7 @@ void MessageSender::onReceive()
 				quint32 start = (*fingerTable)[key][0].toInt();
 				quint32 end = (*fingerTable)[key][1].toInt();
 				if ((start <= updateNode && updateNode < end) || (start <= updateNode && updateNode > end && end < start)
-				|| (start => updateNode && updateNode < end && end < start)) {
+				|| (start >= updateNode && updateNode < end && end < start)) {
 					// Successor is the same as current node, cycle
 					if ((*fingerTable)[key][2].toInt() == nodeID) {
 						receivedMap.insert("empty", 1);

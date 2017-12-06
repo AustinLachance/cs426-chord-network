@@ -661,7 +661,7 @@ void MessageSender::onReceive()
 		}
 		else {
 			MultiLineEdit *searchFileLine = chat->getSearchFileLine();
-			searchFileLine->insertPlainText("File " + QString::number(receivedMap["updateNode"].toInt()) + " found at node " << QString::number(receivedMap["success"].toInt());
+			searchFileLine->insertPlainText("File " + QString::number(receivedMap["updateNode"].toInt() + " found at node " + QString::number(receivedMap["success"].toInt());
 			qDebug() << "File " << QString::number(receivedMap["updateNode"].toInt()) << " found at node " << QString::number(receivedMap["success"].toInt());
 		}
 	}
